@@ -67,6 +67,7 @@ dependencies:
   - openjpeg=2.5.0=ha2aaf27_2
   - openssl=3.0.8=hcfcfb64_0
   - packaging=23.0=pyhd8ed1ab_0
+  - pandas=1.5.3=py311hf63dbb6_0
   - pcre2=10.40=h17e33f8_0
   - pillow=9.4.0=py311h76d9071_1
   - pip=23.0.1=pyhd8ed1ab_0
@@ -83,6 +84,7 @@ dependencies:
   - python=3.11.0=hcf16a7b_0_cpython
   - python-dateutil=2.8.2=pyhd8ed1ab_0
   - python_abi=3.11=3_cp311
+  - pytz=2022.7.1=pyhd8ed1ab_0
   - qt-main=5.15.8=h720456b_6
   - requests=2.28.2=pyhd8ed1ab_0
   - scikit-learn=1.2.1=py311h6619ee7_0
