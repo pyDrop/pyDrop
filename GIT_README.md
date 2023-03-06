@@ -52,3 +52,7 @@ For example, this is what you would do to rebase your branch onto main:
 Follow the examples that git gives you. Be mindful of which changes are important to keep from the main branch, and which are important to keep from your branch.
 
 After a rebase, you will likely have to force push your changes with: `git push -f`
+
+## Further Reading
+
+[git book](https://git-scm.com/book/en/v2)
