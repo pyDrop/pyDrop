@@ -8,11 +8,100 @@ Purpose: Increases the ability of unsupervised models to capture smaller cluster
     course-graining. Iteratively course-grains the data the updated the starting location 
     of the K-means clustering algorithm
 """
-import sklearn
+from sklearn.cluster import KMeans
 import numpy as np
+import matplotlib.pyplot as plt
 
-class Calico:
-    def __init__(self, X, n_clusters, n_grids=100):
+class ModuloBins:
+    """
+    ModuloBins
+    """
+    def __init__(self, mod=10, rem=0):
+        self.mod = mod
+        self.rem = rem
+    
+    def id_to_bin_start(self, idx):
+        return idx*self.mod + self.rem
+    
+    def id_to_bin_center(self, idx):
+        return idx*self.mod + self.rem + self.mod/2
+    
+    def value_to_id(self, value):
+        return int((value-self.rem)/self.mod)
+    
+class LinSpaceBins:
+    """
+    LinSpaceBins
+    """
+    def __init__(self, min, max, n_bins=100):
+        self.min = min
+        self.max = max
+        self.n_bins = n_bins
+
+        self.bins = np.linspace(self.min, self.max, self.n_bins)
+        self.step = self.bins[1] - self.bins[0]
+    
+    def id_to_bin_start(self, idx):
+        return self.bins[idx]
+    
+    def id_to_bin_center(self, idx):
+        return self.bins[idx] + self.step/2
+    
+    def value_to_id(self, value):
+        return np.searchsorted(self.bins, value, side='right')
+    
+class ArrangeBins(LinSpaceBins):
+    """
+    ArrangeBins
+    """
+    def __init__(self, min, max, step):
+        self.min = min
+        self.max = max
+        self.step = step
+
+        self.bins = np.arrange(self.min, self.max, self.step)
+        self.n_bins = len(self.bins)
+
+class Bins:
+    """
+    BinAxes
+    """
+    def __init__(self, default_binf=ModuloBins):
+        self.default_binf = default_binf
+        self.bin_functions = []
+
+    def add_axis(self, binf=None):
+        if not binf:
+            binf = self.default_binf()
+        self.bin_functions.append(binf)
+
+    def get_binf(self, axis):
+        return self.bin_functions[axis]
+    
+    def id_to_bin_start(self, ids):
+        assert len(ids) == len(self.bin_functions)
+        values = []
+        for binf, idx in zip(self.bin_functions, ids):
+            values.append(binf.id_to_bin_start(idx))
+        return values
+    
+    def id_to_bin_center(self, ids):
+        assert len(ids) == len(self.bin_functions)
+        values = []
+        for binf, idx in zip(self.bin_functions, ids):
+            values.append(binf.id_to_bin_center(idx))
+        return values
+    
+    def value_to_id(self, values):
+        assert len(values) == len(self.bin_functions)
+        ids = []
+        for binf, value in zip(self.bin_functions, values):
+            ids.append(binf.value_to_id(value))
+        return ids
+
+
+class KNNCalico:
+    def __init__(self, X, n_clusters, bins=Bins, k_means_model=KMeans):
         """
         X: numpy array of size (n_samples, n_features)
         n_clusters: number of clusters to expect in data
@@ -22,35 +111,53 @@ class Calico:
         """
         # initialize data and the expected number of clusters 
         self.X = X
-        self.n_clusters = n_clusters
+        self.n_train, self.n_features = X.shape
+        self.bins = bins()
+        self.coarse_grained = False
 
-        # initialze number of grids
-        if isinstance(n_grids, int):
-            self.n_grids = [n_grids]*self.n_clusters
-        elif isinstance(n_grids, list):
-            assert len(n_grids) == self.n_clusters
-            self.n_grids = n_grids
-        elif isinstance(n_grids, np.ndarray):
-            n_grids = n_grids.to_list()
-            assert len(n_grids) == self.n_clusters
-            self.n_grids = n_grids
-        else:
-            Exception(f"unsupported type {type(n_grids)} for n_grids")
+        self.k_means_model = k_means_model(n_clusters)
 
-        self.n_grids = n_grids
-        self.k_means_model = sklearn.cluster.KMeans
+    def fit_coarse_grain(self, bin_functions=None):
+        if not bin_functions:
+            bin_functions = [ModuloBins(10)]*self.n_features
+        
+        if len(bin_functions) != self.n_features:
+            raise Exception("number of given bin functions must be equal to the number of features")
+        
+        for bin_function in bin_functions:
+            self.bins.add_axis(binf=bin_function) 
 
-    def fit(X):
+        self.coarse_grained = True
+
+    def fit_uniform_coarse_grain(self, binf=ModuloBins(10)):
+        bin_functions = [binf]*self.n_features
+        self.fit_coarse_grain(bin_functions)
+    
+    def fit(self, X):
+        if not self.coarse_grained:
+            self.fit_coarse_grain()
+        
+        # X_grained_bins = self.bins.value_to_id(X)
+        # X_grained_centers = self.bins.id_to_bin_center(X_grained_bins)
+        # self.k_means_model.fit(X_grained_centers)
+        # centers = self.k_means_model._get the centers out
+        # train new k_means model using new centers
         return
 
-    def predict(X):
+    def predict(self, X):
         return
     
-    def _reorder_predictions(X, y_hat):
+    def score(X, y, type="rand"):
         return
     
-    def _create_grid():
-        return 
-    
-    def _course_grain():
-        return
+if __name__ == "__main__":
+    from sklearn.datasets import make_blobs
+    import matplotlib.pyplot as plt
+    n_samples = 200
+    random_state = 170
+    n_blobs = 2
+
+    # X, y = make_blobs(n_samples=n_samples, n_features=2, centers=n_blobs, random_state=random_state)
+    # plt.scatter(X[:,0], X[:,1])
+    # plt.show()
+
