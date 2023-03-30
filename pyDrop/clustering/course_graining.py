@@ -19,14 +19,19 @@ class ModuloBins:
     def __init__(self, mod=10, rem=0):
         self.mod = mod
         self.rem = rem
+
+        # Bin finding/evaluating functions to be called with np.arrays
+        self.id_to_bin_start = np.vectorize(self._id_to_bin_start)
+        self.id_to_bin_center = np.vectorize(self._id_to_bin_center)
+        self.value_to_id = np.vectorize(self._value_to_id)
+
+    def _id_to_bin_start(self, idx):
+        return float(idx*self.mod + self.rem)
     
-    def id_to_bin_start(self, idx):
-        return idx*self.mod + self.rem
+    def _id_to_bin_center(self, idx):
+        return float(idx*self.mod + self.rem) + self.mod/2
     
-    def id_to_bin_center(self, idx):
-        return idx*self.mod + self.rem + self.mod/2
-    
-    def value_to_id(self, value):
+    def _value_to_id(self, value):
         return int((value-self.rem)/self.mod)
     
 class LinSpaceBins:
@@ -40,6 +45,11 @@ class LinSpaceBins:
 
         self.bins = np.linspace(self.min, self.max, self.n_bins)
         self.step = self.bins[1] - self.bins[0]
+
+        # Bin finding/evaluating functions to be called with np.arrays
+        self.id_to_bin_start = np.vectorize(self._id_to_bin_start)
+        self.id_to_bin_center = np.vectorize(self._id_to_bin_center)
+        self.value_to_id = np.vectorize(self._value_to_id)
     
     def id_to_bin_start(self, idx):
         return self.bins[idx]
@@ -59,12 +69,17 @@ class ArrangeBins(LinSpaceBins):
         self.max = max
         self.step = step
 
-        self.bins = np.arrange(self.min, self.max, self.step)
+        self.bins = np.arange(self.min, self.max, self.step)
         self.n_bins = len(self.bins)
+
+        # Bin finding/evaluating functions to be called with np.arrays
+        self.id_to_bin_start = np.vectorize(self._id_to_bin_start)
+        self.id_to_bin_center = np.vectorize(self._id_to_bin_center)
+        self.value_to_id = np.vectorize(self._value_to_id)
 
 class Bins:
     """
-    BinAxes
+    BinAxes: 
     """
     def __init__(self, default_binf=ModuloBins):
         self.default_binf = default_binf
@@ -98,7 +113,6 @@ class Bins:
         for binf, value in zip(self.bin_functions, values):
             ids.append(binf.value_to_id(value))
         return ids
-
 
 class KNNCalico:
     def __init__(self, X, n_clusters, bins=Bins, k_means_model=KMeans):
@@ -151,11 +165,11 @@ class KNNCalico:
         return
     
 if __name__ == "__main__":
-    from sklearn.datasets import make_blobs
-    import matplotlib.pyplot as plt
-    n_samples = 200
-    random_state = 170
-    n_blobs = 2
+    # from sklearn.datasets import make_blobs
+    # import matplotlib.pyplot as plt
+    # n_samples = 200
+    # random_state = 170
+    # n_blobs = 2
 
     # X, y = make_blobs(n_samples=n_samples, n_features=2, centers=n_blobs, random_state=random_state)
     # plt.scatter(X[:,0], X[:,1])
