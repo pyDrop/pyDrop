@@ -9,6 +9,7 @@ Purpose: Increases the ability of unsupervised models to capture smaller cluster
     of the K-means clustering algorithm
 """
 from sklearn.cluster import KMeans
+from sklearn.metrics.cluster import rand_score, homogeneity_score, completeness_score, v_measure_score
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -16,7 +17,7 @@ class ModuloBins:
     """
     ModuloBins
     """
-    def __init__(self, mod=10, rem=0):
+    def __init__(self, mod=100, rem=0):
         self.mod = mod
         self.rem = rem
 
@@ -90,32 +91,49 @@ class Bins:
             binf = self.default_binf()
         self.bin_functions.append(binf)
 
+    def add_axes(self, binfs):
+        for binf in binfs:
+            self.add_axis(binf)
+
+    def get_num_axes(self):
+        return len(self.bin_functions)
+
     def get_binf(self, axis):
         return self.bin_functions[axis]
     
+    #TODO: reduce the following functions a bit
     def id_to_bin_start(self, ids):
-        assert len(ids) == len(self.bin_functions)
-        values = []
-        for binf, idx in zip(self.bin_functions, ids):
-            values.append(binf.id_to_bin_start(idx))
+        if len(ids.shape) == 1:
+            ids = ids.reshape(-1, 1)
+        n_samples, n_features = ids.shape
+        assert n_features == len(self.bin_functions)
+        values = np.zeros(ids.shape)
+        for binf, axis_idx in zip(self.bin_functions, range(n_features)):
+            values[:,axis_idx] = binf.id_to_bin_start(ids[:,axis_idx])
         return values
     
     def id_to_bin_center(self, ids):
-        assert len(ids) == len(self.bin_functions)
-        values = []
-        for binf, idx in zip(self.bin_functions, ids):
-            values.append(binf.id_to_bin_center(idx))
+        if len(ids.shape) == 1:
+            ids = ids.reshape(-1, 1)
+        n_samples, n_features = ids.shape
+        assert n_features == len(self.bin_functions)
+        values = np.zeros(ids.shape)
+        for binf, axis_idx in zip(self.bin_functions, range(n_features)):
+            values[:,axis_idx] = binf.id_to_bin_center(ids[:,axis_idx])
         return values
     
     def value_to_id(self, values):
-        assert len(values) == len(self.bin_functions)
-        ids = []
-        for binf, value in zip(self.bin_functions, values):
-            ids.append(binf.value_to_id(value))
+        if len(values.shape) == 1:
+            values = values.reshape(-1, 1)
+        n_samples, n_features = values.shape
+        assert n_features == len(self.bin_functions)
+        ids = np.zeros(values.shape)
+        for binf, axis_idx in zip(self.bin_functions, range(n_features)):
+            ids[:,axis_idx] = binf.value_to_id(values[:,axis_idx])
         return ids
 
 class KNNCalico:
-    def __init__(self, X, n_clusters, bins=Bins, k_means_model=KMeans):
+    def __init__(self, n_clusters, bins=Bins, k_means_model=KMeans):
         """
         X: numpy array of size (n_samples, n_features)
         n_clusters: number of clusters to expect in data
@@ -124,54 +142,86 @@ class KNNCalico:
                     n_grids = [<n_grids for feature 1>, <n_grids for feature 2>, ...]
         """
         # initialize data and the expected number of clusters 
-        self.X = X
-        self.n_train, self.n_features = X.shape
         self.bins = bins()
-        self.coarse_grained = False
+        self.n_clusters = n_clusters
+        self.k_means_model = k_means_model
 
-        self.k_means_model = k_means_model(n_clusters)
+        self.coarse_model = None
+        self.fine_model = None
 
-    def fit_coarse_grain(self, bin_functions=None):
-        if not bin_functions:
-            bin_functions = [ModuloBins(10)]*self.n_features
-        
-        if len(bin_functions) != self.n_features:
-            raise Exception("number of given bin functions must be equal to the number of features")
-        
-        for bin_function in bin_functions:
-            self.bins.add_axis(binf=bin_function) 
-
-        self.coarse_grained = True
-
-    def fit_uniform_coarse_grain(self, binf=ModuloBins(10)):
-        bin_functions = [binf]*self.n_features
-        self.fit_coarse_grain(bin_functions)
+    def fit_uniform_coarse_grain(self, n_features, binf=ModuloBins(100)):
+        bin_functions = [binf]*n_features
+        self.bins.add_axes(bin_functions)
     
+    def coarse_grain(self, X):
+        n_samples, n_features = X.shape
+        n_defined_bins = self.bins.get_num_axes()
+        if n_defined_bins == 0:
+            print(f"no axes defined, using default ModuloBins bins for coarse-graining")
+            self.fit_uniform_coarse_grain(n_features)
+        elif n_defined_bins < n_features:
+            print(f"ambiguous bins definition: {n_defined_bins} axes defined for bins but\
+                  there are {n_features} total axes.")
+        
+        X_grained_bins = self.bins.value_to_id(X)
+        X_grained_bins = np.unique(X_grained_bins, axis=0)
+        X_grained_centers = self.bins.id_to_bin_center(X_grained_bins)
+
+        return X_grained_centers
+
     def fit(self, X):
-        if not self.coarse_grained:
-            self.fit_coarse_grain()
-        
-        # X_grained_bins = self.bins.value_to_id(X)
-        # X_grained_centers = self.bins.id_to_bin_center(X_grained_bins)
-        # self.k_means_model.fit(X_grained_centers)
-        # centers = self.k_means_model._get the centers out
-        # train new k_means model using new centers
-        return
+        X_grained_centers = self.coarse_grain(X)
+        self.coarse_model = self.k_means_model(self.n_clusters, n_init='auto')
+        self.coarse_model.fit(X_grained_centers)
+        coarse_centers = self.coarse_model.cluster_centers_
 
-    def predict(self, X):
-        return
+        self.fine_model = self.k_means_model(self.n_clusters, init=coarse_centers, n_init=1)
+        self.fine_model.fit(X)
+
+    def predict(self, X, model="fine", return_centers=False):
+        y_pred = None
+        centers = None
+        if model=="fine":
+            y_pred = self.fine_model.predict(X)
+            centers = self.fine_model.cluster_centers_
+        elif model=="coarse":
+            y_pred = self.coarse_model.predict(X)
+            centers = self.coarse_model.cluster_centers_
+        elif model=="knn":
+            km = self.k_means_model(self.n_clusters, n_init='auto')
+            y_pred = km.fit_predict(X)
+            centers = km.cluster_centers_
+        else:
+            raise Exception("model must be fine or coarse")
+        if return_centers:
+            return y_pred, centers
+        else:
+            return y_pred
     
-    def score(X, y, type="rand"):
-        return
+    def scores(self, X, y_true, model="fine"):
+        y_pred = self.predict(X, model=model)
+        scores = {"rand_score": rand_score(y_true, y_pred),
+                  "homogeneity_score": homogeneity_score(y_true, y_pred),
+                  "completeness_score": completeness_score(y_true, y_pred)
+                 }
+        return scores
     
 if __name__ == "__main__":
-    # from sklearn.datasets import make_blobs
-    # import matplotlib.pyplot as plt
-    # n_samples = 200
-    # random_state = 170
-    # n_blobs = 2
+    from sklearn.datasets import make_blobs
+    import matplotlib.pyplot as plt
 
-    # X, y = make_blobs(n_samples=n_samples, n_features=2, centers=n_blobs, random_state=random_state)
-    # plt.scatter(X[:,0], X[:,1])
-    # plt.show()
+    X2, y2 = make_blobs(n_samples=50000, n_features=2, centers=np.array([[-3000, -3000],[-3000, 3000]]), cluster_std=250)
+    X3, y3 = make_blobs(n_samples = 120, n_features=2, centers=np.array([[0,0]]), cluster_std=250)
+    X = np.concatenate((X2, X3), axis=0)
+    model = KNNCalico(3)
+    model.fit(X)
+    plt.scatter(X[:,0], X[:,1], alpha=0.25)
+    X_grained_centers = model.coarse_grain(X)
+    plt.scatter(X_grained_centers[:,0], X_grained_centers[:,1], alpha=0.50)
+    for m in ["fine", "coarse", "knn"]:
+        y_pred, centers = model.predict(X, model=m, return_centers=True)
+        print(centers)
+        plt.scatter(centers[:,0], centers[:,1], alpha=1, s=100, marker="x", label=m)
+    plt.legend()
+    plt.show()
 
