@@ -7,6 +7,6 @@ description here
 """
 
 import sys
-import os 
+import os
 
-import clustering
+from clustering import *

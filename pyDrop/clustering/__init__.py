@@ -1,1 +1,1 @@
-from .course_graining import Calico
+from .course_graining import *

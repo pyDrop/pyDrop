@@ -8,10 +8,12 @@ Purpose: Increases the ability of unsupervised models to capture smaller cluster
     course-graining. Iteratively course-grains the data the updated the starting location 
     of the K-means clustering algorithm
 """
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans, OPTICS, DBSCAN, Birch, AgglomerativeClustering
 from sklearn.metrics.cluster import rand_score, homogeneity_score, completeness_score, v_measure_score
 import numpy as np
 import matplotlib.pyplot as plt
+from copy import deepcopy
+from pyDrop.utils import datasets
 
 class ModuloBins:
     """
@@ -132,27 +134,17 @@ class Bins:
             ids[:,axis_idx] = binf.value_to_id(values[:,axis_idx])
         return ids
 
-class KNNCalico:
-    def __init__(self, n_clusters, bins=Bins, k_means_model=KMeans):
-        """
-        X: numpy array of size (n_samples, n_features)
-        n_clusters: number of clusters to expect in data
-        n_grids: number of grids along each dimension, defaults to 100 for every dimension
-                 To have different numbers of grids along each axis, pass N-grids as a list
-                    n_grids = [<n_grids for feature 1>, <n_grids for feature 2>, ...]
-        """
-        # initialize data and the expected number of clusters 
-        self.bins = bins()
-        self.n_clusters = n_clusters
-        self.k_means_model = k_means_model
+class CGCluster:
+    def __init__(self, bins=Bins(), model=OPTICS()):
+        self.bins = bins
+        self.model = model
 
-        self.coarse_model = None
-        self.fine_model = None
+        self.coarse_model = deepcopy(model)
 
     def fit_uniform_coarse_grain(self, n_features, binf=ModuloBins(100)):
         bin_functions = [binf]*n_features
         self.bins.add_axes(bin_functions)
-    
+
     def coarse_grain(self, X):
         n_samples, n_features = X.shape
         n_defined_bins = self.bins.get_num_axes()
@@ -168,14 +160,52 @@ class KNNCalico:
         X_grained_centers = self.bins.id_to_bin_center(X_grained_bins)
 
         return X_grained_centers
+    
+    def fit(self, X):
+        X_grained_centers = self.coarse_grain(X)
+        self.coarse_model.fit(X_grained_centers)
+
+    def predict(self, X, model="coarse"):
+        y_pred = None
+        if model=="coarse":
+            y_pred = self.coarse_model.predict(X)
+        elif model=="default":
+            y_pred = self.model.fit_predict(X)
+        else:
+            raise Exception("model must be coarse or default")
+        return y_pred
+    
+    def scores(self, X, y_true, model="fine"):
+        y_pred = self.predict(X, model=model)
+        r_score = rand_score(y_true, y_pred)
+        scores = {"rand_score": r_score,
+                  "homogeneity_score": homogeneity_score(y_true, y_pred),
+                  "completeness_score": completeness_score(y_true, y_pred),
+                  "n_misclassified": len(y_true)*(1-r_score)
+                 }
+        return scores
+
+class KNNCalico(CGCluster):
+    def __init__(self, bins=Bins(), k_means_model=KMeans()):
+        """
+
+        """
+        # initialize data and the expected number of clusters 
+        self.bins = bins
+        self.model = k_means_model
+
+        self.coarse_model = deepcopy(k_means_model)
+        self.coarse_model.set_params(n_init='auto')
+
+        self.fine_model = deepcopy(k_means_model)
+        self.fine_model.set_params(n_init=1)
 
     def fit(self, X):
         X_grained_centers = self.coarse_grain(X)
-        self.coarse_model = self.k_means_model(self.n_clusters, n_init='auto')
         self.coarse_model.fit(X_grained_centers)
         coarse_centers = self.coarse_model.cluster_centers_
 
-        self.fine_model = self.k_means_model(self.n_clusters, init=coarse_centers, n_init=1)
+        self.fine_model.set_params(init=coarse_centers)
         self.fine_model.fit(X)
 
     def predict(self, X, model="fine", return_centers=False):
@@ -187,10 +217,9 @@ class KNNCalico:
         elif model=="coarse":
             y_pred = self.coarse_model.predict(X)
             centers = self.coarse_model.cluster_centers_
-        elif model=="knn":
-            km = self.k_means_model(self.n_clusters, n_init='auto')
-            y_pred = km.fit_predict(X)
-            centers = km.cluster_centers_
+        elif model=="default":
+            y_pred = self.model.fit_predict(X)
+            centers = self.model.cluster_centers_
         else:
             raise Exception("model must be fine or coarse")
         if return_centers:
@@ -198,30 +227,24 @@ class KNNCalico:
         else:
             return y_pred
     
-    def scores(self, X, y_true, model="fine"):
-        y_pred = self.predict(X, model=model)
-        scores = {"rand_score": rand_score(y_true, y_pred),
-                  "homogeneity_score": homogeneity_score(y_true, y_pred),
-                  "completeness_score": completeness_score(y_true, y_pred)
-                 }
-        return scores
-    
 if __name__ == "__main__":
     from sklearn.datasets import make_blobs
     import matplotlib.pyplot as plt
 
-    X2, y2 = make_blobs(n_samples=50000, n_features=2, centers=np.array([[-3000, -3000],[-3000, 3000]]), cluster_std=250)
-    X3, y3 = make_blobs(n_samples = 120, n_features=2, centers=np.array([[0,0]]), cluster_std=250)
-    X = np.concatenate((X2, X3), axis=0)
-    model = KNNCalico(3)
-    model.fit(X)
-    plt.scatter(X[:,0], X[:,1], alpha=0.25)
-    X_grained_centers = model.coarse_grain(X)
-    plt.scatter(X_grained_centers[:,0], X_grained_centers[:,1], alpha=0.50)
-    for m in ["fine", "coarse", "knn"]:
-        y_pred, centers = model.predict(X, model=m, return_centers=True)
-        print(centers)
-        plt.scatter(centers[:,0], centers[:,1], alpha=1, s=100, marker="x", label=m)
-    plt.legend()
-    plt.show()
+    # X2, y2 = make_blobs(n_samples=50000, n_features=2, centers=np.array([[-3000, -3000],[-3000, 3000]]), cluster_std=250)
+    # X3, y3 = make_blobs(n_samples = 120, n_features=2, centers=np.array([[0,0]]), cluster_std=250)
+    # X = np.concatenate((X2, X3), axis=0)
+    # model = KNNCalico(3)
+    # model.fit(X)
+    # plt.scatter(X[:,0], X[:,1], alpha=0.25)
+    # X_grained_centers = model.coarse_grain(X)
+    # plt.scatter(X_grained_centers[:,0], X_grained_centers[:,1], alpha=0.50)
+    # for m in ["fine", "coarse", "knn"]:
+    #     y_pred, centers = model.predict(X, model=m, return_centers=True)
+    #     print(centers)
+    #     plt.scatter(centers[:,0], centers[:,1], alpha=1, s=100, marker="x", label=m)
+    # plt.legend()
+    # plt.show()
+
+    datasets.hithere()
 
