@@ -15,7 +15,7 @@ setuptools.setup(
 
     keywords="clustering, ddPCR, coarsegraining",
 
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_namespace_packages(where="pyDrop/pyDrop"),
     include_package_data=True,
 
     classifiers=[

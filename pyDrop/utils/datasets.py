@@ -1,2 +1,0 @@
-def hithere():
-    print("hi")
