@@ -5,7 +5,7 @@ from sklearn import cluster
 from sklearn.metrics.cluster import rand_score, homogeneity_score, completeness_score, v_measure_score
 
 # Load the dataset
-df = pd.read_csv("../../data/X002_droplet_amplitudes.csv")
+df = pd.read_csv("../data/X008_droplet_amplitudes.csv")
 
 # Extract the features and true labels
 features = df[['Ch1', 'Ch2']].values
