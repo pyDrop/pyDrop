@@ -3,6 +3,17 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn import cluster
 from sklearn.metrics.cluster import rand_score, homogeneity_score, completeness_score, v_measure_score
+from pathlib import Path
+#dir and print functions/statements
+# data_dir = Path("../../data")
+# for file in data_dir.glob("**/X00*.csv"):
+#     if file.exists() and file.is_file():
+#         print(f"processing {file.name}")
+#         df = pd.read_csv(file)
+#         if "Ch2" not in df.columns:
+#             print("Hey, this doesn't have Ch2 column!")
+#         print(df.head())
+
 
 # Load the dataset
 df = pd.read_csv("../../data/X002_droplet_amplitudes.csv")
@@ -12,7 +23,7 @@ features = df[['Ch1', 'Ch2']].values
 true_labels = df["Cluster_1_2"].values
 
 # Set the number of clusters
-num_clusters = 2
+num_clusters = 4
 
 # Define the clustering models
 models = [    cluster.KMeans(n_clusters=num_clusters),    cluster.AgglomerativeClustering(n_clusters=num_clusters),    cluster.DBSCAN(),    cluster.OPTICS(),    cluster.Birch(n_clusters=num_clusters)]
@@ -60,5 +71,6 @@ plt.xticks(x_axis, labels)
 plt.xlabel("Cluster")
 plt.ylabel("Metric")
 plt.title("Clustering Accuracy")
-plt.legend(loc='lower right')
+plt.legend(loc='lower left')
+plt.tight_layout()
 plt.show()
