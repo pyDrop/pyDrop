@@ -8,11 +8,12 @@ Purpose: Increases the ability of unsupervised models to capture smaller cluster
     course-graining. Iteratively course-grains the data the updated the starting location 
     of the K-means clustering algorithm
 """
+
+from copy import deepcopy
+import matplotlib.pyplot as plt
+import numpy as np
 from sklearn.cluster import KMeans, OPTICS, DBSCAN, Birch, AgglomerativeClustering
 from sklearn.metrics.cluster import rand_score, homogeneity_score, completeness_score, v_measure_score
-import numpy as np
-import matplotlib.pyplot as plt
-from copy import deepcopy
 
 class ModuloBins:
     """
