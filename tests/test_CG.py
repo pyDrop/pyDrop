@@ -71,7 +71,7 @@ def test_errors():
     centers = np.array([[-3000, -3000],[-3000, 3000],[0,0]])
     stdevs = np.array([500, 500, 500])
     X, y = make_blobs(n_samples=n_samples, n_features=n_features, centers=centers, cluster_std=stdevs)
-    model = KNNCalico(k_means_model=KMeans(n_clusters=3))
+    model = KMCalico(k_means_model=KMeans(n_clusters=3))
     model.fit(X)
     X_grained_centers = model.coarse_grain(X)
     with pytest.raises(ValueError):
