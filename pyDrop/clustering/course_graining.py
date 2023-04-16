@@ -46,22 +46,36 @@ class LinSpaceBins:
         self.max = max
         self.n_bins = n_bins
 
-        self.bins = np.linspace(self.min, self.max, self.n_bins)
-        self.step = self.bins[1] - self.bins[0]
+        self.step = float(max-min)/n_bins
 
         # Bin finding/evaluating functions to be called with np.arrays
         self.id_to_bin_start = np.vectorize(self._id_to_bin_start)
         self.id_to_bin_center = np.vectorize(self._id_to_bin_center)
         self.value_to_id = np.vectorize(self._value_to_id)
     
-    def id_to_bin_start(self, idx):
-        return self.bins[idx]
+    def _id_to_bin_start(self, idx):
+        if idx >= self.n_bins:
+            return self.max - self.step # format goes from [min, max)
+        elif idx < 0:
+            return self.min
+        else:
+            return self.min + idx*self.step
     
-    def id_to_bin_center(self, idx):
-        return self.bins[idx] + self.step/2
+    def _id_to_bin_center(self, idx):
+        if idx >= self.n_bins:
+            return self.max - (self.step/2)
+        elif idx < 0:
+            return self.min + (self.step/2)
+        else:
+            return self.min + idx*self.step + self.step/2
     
-    def value_to_id(self, value):
-        return np.searchsorted(self.bins, value, side='right')
+    def _value_to_id(self, value):
+        if value <= self.min:
+            return 0
+        elif value > self.max:
+            return self.n_bins
+        else:
+            return int((value - self.min) // self.step)
     
 class ArrangeBins(LinSpaceBins):
     """
@@ -172,7 +186,7 @@ class CGCluster:
         elif model=="default":
             y_pred = self.model.fit_predict(X)
         else:
-            raise Exception("model must be coarse or default")
+            raise ValueError("model must be coarse or default")
         return y_pred
     
     def scores(self, X, y_true, model="fine"):
@@ -221,7 +235,7 @@ class KNNCalico(CGCluster):
             y_pred = self.model.fit_predict(X)
             centers = self.model.cluster_centers_
         else:
-            raise Exception("model must be fine or coarse")
+            raise ValueError("model must be fine or coarse")
         if return_centers:
             return y_pred, centers
         else:
