@@ -374,11 +374,11 @@ class CGCluster:
             raise AmbiguousCGFunction(f"ambiguous bins definition: {n_defined_bins} \
                                       axes defined for bins but there are {n_features} total axes.")
         
-        X_grained_bins = self.bins.value_to_id(X)
-        X_grained_bins = np.unique(X_grained_bins, axis=0)
-        X_grained_centers = self.bins.id_to_bin_center(X_grained_bins)
+        x_grained_bins = self.bins.value_to_id(X)
+        x_grained_bins = np.unique(x_grained_bins, axis=0)
+        x_grained_centers = self.bins.id_to_bin_center(x_grained_bins)
 
-        return X_grained_centers
+        return x_grained_centers
     
     def fit(self, X):
         """fits the data
@@ -392,8 +392,8 @@ class CGCluster:
         -------
         None
         """
-        X_grained_centers = self.coarse_grain(X)
-        self.coarse_model.fit(X_grained_centers)
+        x_grained_centers = self.coarse_grain(X)
+        self.coarse_model.fit(x_grained_centers)
 
     def predict(self, X, model="coarse"):
         """predicts the labels of the given data
@@ -492,8 +492,8 @@ class KMCalico(CGCluster):
         -------
         None
         """
-        X_grained_centers = self.coarse_grain(X)
-        self.coarse_model.fit(X_grained_centers)
+        x_grained_centers = self.coarse_grain(X)
+        self.coarse_model.fit(x_grained_centers)
         coarse_centers = self.coarse_model.cluster_centers_
 
         self.fine_model.set_params(init=coarse_centers)
