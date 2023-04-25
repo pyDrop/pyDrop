@@ -8,17 +8,13 @@ def clustering_accuracy(df, dimensions=None):
 
     #Defining features, true cluster values, and amount of clusters
     if 'droplet' in df.columns:
-        # Extracting data and true clustering values from dataframe
-        features = df.iloc[:, :-2].values
-        true = df.iloc[:, -2].values
-        # Finds how many unique cluster names
-        clusters = len(df.iloc[:, -2].unique())
-    else:
-        # Extracting data and true clustering values from dataframe
-        features = df.iloc[:, :-1].values
-        true = df.iloc[:, -1].values
-        # Finds how many unique cluster names
-        clusters = len(df.iloc[:, -1].unique())
+        df = df.drop('droplet', axis=1)
+
+    # Extracting data and true clustering values from dataframe
+    features = df.iloc[:, :-1].values
+    true = df.iloc[:, -1].values
+    # Finds how many unique cluster names
+    clusters = len(df.iloc[:, -1].unique())
 
     #Creating an array of existing clustering algorithms
     models = [cluster.KMeans(n_clusters=clusters), cluster.AgglomerativeClustering(n_clusters=clusters),
@@ -63,7 +59,6 @@ def clustering_accuracy(df, dimensions=None):
     ax1.legend(loc='lower right', fontsize=10)
 
 
-
     # List of unique hexcode colors
     colors = ['#0000FF', '#000000', '#FF0000', '#FFC0CB', '#FFA07A', '#FF7F50',
               '#FF4500', '#FFD700', '#FFFF00', '#00FF00', '#32CD32', '#00FFFF',
@@ -72,12 +67,15 @@ def clustering_accuracy(df, dimensions=None):
     
     # Create 1,2 or 3 dimensional scatter plot
     if dimensions == 1:
+
+        df['droplet'] = range(1, len(df) + 1)
+
         clusters = df.iloc[:, 1].unique()  # Use integer position 1 instead of column name
 
         fig2, ax2 = plt.subplots()  # Create a new figure and axis for the 1D plot
 
         for index, value in enumerate(clusters):
-            droplet = (df[df.iloc[:, 1] == value].iloc[:, -1].to_numpy())  # find droplet value for given cluster
+            droplet = (df[df.iloc[:, 1] == value].iloc[:, 2].to_numpy())  # find droplet value for given cluster
             channel = (df[df.iloc[:, 1] == value].iloc[:, 0].to_numpy())  # find channel value for given cluster
             ax2.scatter(droplet, channel, color=colors[index])  # applies unique color to cluster
 
@@ -103,16 +101,16 @@ def clustering_accuracy(df, dimensions=None):
 
     if dimensions == 3:
         # get the unique clusters and set the color scheme
-        clusters = df.iloc[:, -1].unique()
+        clusters = df.iloc[:, 3].unique()
 
         fig2 = plt.figure()  # Create a new figure for the 3D plot
         ax2 = fig2.add_subplot(111, projection='3d')
 
         # iterate over the clusters and add each cluster's data to the same axis object
         for index, value in enumerate(clusters):
-            channel1 = df.loc[df.iloc[:, -1] == value, df.columns[0]]
-            channel2 = df.loc[df.iloc[:, -1] == value, df.columns[1]]
-            channel3 = df.loc[df.iloc[:, -1] == value, df.columns[2]]
+            channel1 = df.loc[df.iloc[:, 3] == value, df.columns[0]]
+            channel2 = df.loc[df.iloc[:, 3] == value, df.columns[1]]
+            channel3 = df.loc[df.iloc[:, 3] == value, df.columns[2]]
             ax2.scatter(channel1, channel2, channel3, c=colors[index])
 
         # set labels for the axes
@@ -123,7 +121,7 @@ def clustering_accuracy(df, dimensions=None):
 
     plt.show()
 
-# df1 = pd.read_csv("../../data/X001_droplet_amplitudes.csv")
-# df2 = pd.read_csv("../../data/X007_droplet_amplitudes.csv")
-# df3 = pd.read_csv("../../data/3d_assay_4.csv")
-# clustering_accuracy(df3,3)
+df1 = pd.read_csv("../../data/X001_droplet_amplitudes.csv")
+df2 = pd.read_csv("../../data/X007_droplet_amplitudes.csv")
+df3 = pd.read_csv("../../data/3d_assay_4.csv")
+clustering_accuracy(df1,1)
