@@ -54,3 +54,6 @@ def elbow_method(X, kmax):
     plt.ylabel('Inertia')
     plt.title('Elbow Method')
     plt.show()
+
+
+#df = pd.read_csv("../../data/X002_droplet_amplitudes.csv")
