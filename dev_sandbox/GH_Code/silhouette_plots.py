@@ -9,12 +9,12 @@ def silhouette(daf: str, mav: int, dims: Optional[int] = None) -> None:
     Plot the silhouette scores for KMeans clustering on the specified data frame.
 
     Parameters:
-    - daf (str): The file path to the data frame.
+    - daf (str): The file path to the data frame. Put filepath in double quotes
     - mav (int): The maximum number of clusters to test.
     - dims (int): The number of dimensions in the input data frame. Defaults to None.
 
     Returns:
-    - None
+    - The optimal number of clusters for a given data frame
     """
     # Check input values
     if not isinstance(mav, int) or mav <= 0:
@@ -46,7 +46,7 @@ def silhouette(daf: str, mav: int, dims: Optional[int] = None) -> None:
         kmeans.fit(features)
         score = silhouette_score(features, kmeans.labels_)
         silhouette_scores.append(score)
-        if score == max(silhouette_scores):
+        if score == max(silhouette_scores): #stores the optimal number of clusters as the maxk value
                 maxk = []
                 maxk = k
 
