@@ -11,6 +11,9 @@ import re
 from sklearn import cluster
 from sklearn.metrics.cluster import rand_score, homogeneity_score, completeness_score, v_measure_score
 
+from pyDrop.exceptions import (ModelValueError, 
+                               AmbiguousCGFunction)
+
 class PCRData:
     """Loads Data from file or pandas dataframe. Includes options 
     for column naming which is required if input data does not follow
@@ -214,57 +217,96 @@ class PCREvaluator:
         self.data = data
         self.model = None
     
-    def plot_supervised_metrics(self, models):
-        """
+    def plot_supervised_metrics(self, models, display=False):
+        """Generates a plot of rand, homogeneity, completeness, and v-measure scores
+        from a list of models. All given models must have a working fit_predict function
+        that fits and then predicts labels for the data. Typically sklearn.cluster 
+        functions are used, but any model may work. As this is a supervised scoring 
+        function, the input data must be supervised with valid true labels.
+        Parameters
+        ----------
+        models: sklearn.cluster | cluster-algorithm
+            A list of sklearn or other models to run supervised testing on. Each model
+            must have a working fit_predict function. 
+        display: bool
+            If True, display a plot summary of the various scores for each model
+        Returns
+        -------
+        results_dict: dict(str, dict(str, float))
+            A dictionary summary of the various scores for each model. Format is
+            dict[model_name] = {"rand": <rand_score>, "homogeneity": <homogeneity_score>, ...}
         """
 
         if not self.data.supervised:
             raise Exception
 
         results = []
+        results_dict = {}
 
         #Determing accuracy of each clustering model with
-        
-        for model in models.values():
+        score_names = ["rand", "homogeneity", "completeness", "v_measure"]
+        for name, model in models.items():
             predictions = model.fit_predict(self.data.X)
             # Creating an array of accuracy scores
             scores = [rand_score(self.data.y, predictions), homogeneity_score(self.data.y, predictions),
                     completeness_score(self.data.y, predictions), v_measure_score(self.data.y, predictions)]
+            results_dict[name] = dict([(score_name, score_value) for score_name, score_value in zip(score_names, scores)])
             results.append(scores)
 
-        # Making results vector the correct shape
-        results = np.transpose(np.array(results))
+        if display:
+            # Making results vector the correct shape
+            results = np.transpose(np.array(results))
 
-        #Creating Bar Graph
-        labels = list(models.keys())
+            #Creating Bar Graph
+            labels = list(models.keys())
 
-        x = np.arange(len(labels))  # the label locations
-        width = 0.2  # the width of the bars
+            x = np.arange(len(labels))  # the label locations
+            width = 0.2  # the width of the bars
 
-        fig1, ax1 = plt.subplots()
-        rects1 = ax1.bar(x - 2 * width, results[0], width, label='Rand')
-        rects2 = ax1.bar(x - width, results[1], width, label='Homogeneity')
-        rects3 = ax1.bar(x, results[2], width, label='Completeness')
-        rects4 = ax1.bar(x + width, results[3], width, label='V-measure')
+            fig1, ax1 = plt.subplots()
+            rects1 = ax1.bar(x - 2 * width, results[0], width, label='Rand')
+            rects2 = ax1.bar(x - width, results[1], width, label='Homogeneity')
+            rects3 = ax1.bar(x, results[2], width, label='Completeness')
+            rects4 = ax1.bar(x + width, results[3], width, label='V-measure')
 
-        # Add some text for column values centered above each column
-        for rect in rects1 + rects2 + rects3 + rects4:
-            height = rect.get_height()
-            ax1.text(rect.get_x() + rect.get_width() / 2, height + 0.01, f'{height:.2f}',
-                    ha='center', va='bottom', fontsize=8)
+            # Add some text for column values centered above each column
+            for rect in rects1 + rects2 + rects3 + rects4:
+                height = rect.get_height()
+                ax1.text(rect.get_x() + rect.get_width() / 2, height + 0.01, f'{height:.2f}',
+                        ha='center', va='bottom', fontsize=8)
 
-        # Add some text for labels, title and custom x-axis tick labels, etc.
-        ax1.set_ylabel('Score')
-        ax1.set_title('Clustering Supervised Metrics')
-        ax1.set_xticks(x)
-        ax1.set_xticklabels(labels)
-        ax1.legend(loc='lower right', fontsize=10)
+            # Add some text for labels, title and custom x-axis tick labels, etc.
+            ax1.set_ylabel('Score')
+            ax1.set_title('Clustering Supervised Metrics')
+            ax1.set_xticks(x)
+            ax1.set_xticklabels(labels)
+            ax1.legend(loc='lower right', fontsize=10)
+            plt.show()
         
-        return fig1
+        return results_dict
 
-    def predict_num_clusters(self, method="elbow", graph=False):
+    def predict_num_clusters(self, method="elbow", display=False):
+        """Uses statistical approaches to predict the number of clusters in the data
+        Can either use the elbow method or sillohette plot method to infer the
+        number of clusters using simple KMeans. Ideally, the number of clusters 
+        returned should correspond roughly to the anticipated number of clusters for
+        ddPCR data which is 2 times the number of features (2 assays per axis)
+        Parameters
+        ----------
+        method: str
+            Either "elbow" or "silhouette" which specifies the method to use to predict the
+            number of clusters.
+        display: bool
+            If True, display a visual summary of the appropriate method. Gives an elbow plot
+            if method="elbow" and a silhouette plot if method="silhouette"
+        Returns
+        -------
+        Number of Cluster: int
+            The anticipated number of clusters from elbow or silhouette method using 
+            sklearn's KMeans algorithm for clustering and accuracy calculations. 
+        """
         if method == "elbow":
-            return self._elbow_method(graph=graph)
+            return self._elbow_method(graph=display)
         elif method == "silhouette":
             return 
         else:
@@ -310,18 +352,65 @@ class PCREvaluator:
         return k_values[largest_change_index]
     
     def set_model(self, model):
+        """Sets the model to use in clustering operations
+        Given model must be an instantiated object with all variables already
+        given. May be any of the sklearn.cluster algorithms or any clustering
+        algorithm with a valid fit and predict method. 
+        Parameters
+        ----------
+        model: sklearn.cluster... | other clustering algorithm
+            Model to use in future data clustering and prediction
+        Returns
+        -------
+        None
+        """
+        if "fit" not in dir(model):
+            raise Exception
+        elif "predict" not in dir(model):
+            raise Exception
+        
         self.model = model
-
-    def fit(self):
         self.model.fit(self.data.X)
     
     def predict(self, X_data=None):
+        """Gives the predictions from the model previously set
+        Assumes a previous call to PCREvaluator.set_model has already been made
+        and calls the .predict method of the specified model.
+        Parameters
+        ----------
+        X_data: numpy.ndarray
+            If given, predicts clusters from the given data instead of the data
+            used to train the model. Used if new data needs to be classified using
+            the trained model. 
+        Returns
+        -------
+        cluster_ids: numpy.ndarray
+            The integer cluster ids from 0 to <num_clusters-1>. 
+        """
         if X_data == None:
             X_data = self.data.X
-        return self.model.predict(X_data)
+        cluster_ids = self.model.predict(X_data)
+        return cluster_ids
     
-    def fit_predict(self):
-        return self.model.fit_predict(self.data.X)
-    
-    def get_interstitial_fraction(self):
-        return 0.90
+    def predict_interstitial(self, tol=0.6, use_true_labels: bool=False):
+        """Returns the Interstitial fraction of points given a trained clustering algorithm
+        and optionally the true value labels of the data. The interstitial fraction of points
+        is the fraction of points that are not likely to be assigned to a single cluster. 
+        Whether a point is or is not likely to be clustered is set by the tol factor.
+        Parameters
+        ----------
+        tol: float, default=0.6
+            Specifies the probability limit below which a point is not likely to be assigned to
+            a given cluster. All points below this probability are included in the interstitial 
+            fraction. 
+        use_true_labels: bool, default=False
+            Whether or not to use the true labels in calculating the interstitial fraction. Otherwise
+            the cluster assignments using the given clustering model set by PCREvaluator.set_model()
+            is used. If True, the data must be supervised and specifiy true cluster labels.
+        Returns
+        -------
+        assignments: numpy.ndarray
+            A vector of assigned clusters with indices from 0 to <num_clusters-1> including an additional
+            labels of -1 that identifies which points lie in the interstitial fraction or middle reign.
+        """
+        return
