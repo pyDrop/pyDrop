@@ -25,7 +25,11 @@ class PCRData:
         column name that corresponds to the labels. Overrides default names
     Usage
     -----
-    >>> 
+    >>> filepath = "data/3d_assay_0.csv"
+    >>> data = PCRData(filepath, sep=",", header=True)
+    >>> data.plot()
+    PCRData also contains functionality to subsample data if true labels are given for testing purposes:
+    >>> data.subsample_clusters({1: 1.0, 2: 0, 3: 0.5})
     """
     def __init__(self, data, X_columns: list(str)=[], y_column: str="", verbose: bool=True, *args, **kwargs):
         if isinstance(data, pd.DataFrame):
@@ -86,6 +90,19 @@ class PCRData:
         self.predicted_num_clusters = self.num_features * 2 # 2 clusters for each channel
     
     def plot(self):
+        """Plots data up to 3 dimensions
+        Infers the type of scatter plot to give based on the number of features
+        and plots the data accordingly. If the data is supervised and true labels
+        are given with the input, clusters are given different colors. Else, all
+        points are black. 
+        Parameters
+        ----------
+        None
+        Returns
+        -------
+        fig: matplotlib.pyplot.figure
+            A figure representation of the data. 
+        """
         # List of unique hexcode colors
         colors = ['#0000FF', '#000000', '#FF0000', '#FFC0CB', '#FFA07A', '#FF7F50',
                 '#FF4500', '#FFD700', '#FFFF00', '#00FF00', '#32CD32', '#00FFFF',
@@ -131,42 +148,95 @@ class PCRData:
 
         return fig
 
-    def prevalidator(self):
-        return True
+    # def prevalidator(self):
+    #     return True
+
+    def subsample_clusters(self, probs: dict(int, float)={}):
+        """Subsamples the data based on an input set of probabilities for each feature
+        Mainly used to test algorithms with decreasing number of sample points per cluster
+        or to stress-test workflows. Also used to create train-test splits of the data.
+        Parameters
+        ----------
+        probs: dict(int, float)
+            Dictionary of probabilities that correspond to different labels to use in
+            the subsampling of the data. For example, a probs dict of {1: 1.0, 2: 0.5} 
+            indicates that all of label 1 and half of label 2 should be subsampled. 
+        Returns
+        -------
+        sub_X: numpy.ndarray
+            subsampled array of shape (?,num_features) where the number of rows depends
+            on the number of subsampled samples.
+        sub_y: numpy.ndarray
+            subsampled array of same length as sub_X.shape[0] corresponding to the labels
+            of the data
+        """
+        
+        if not self.supervised:
+            raise Exception
+
+        sub_X = np.array([])
+        sub_y = np.array([])
+
+        for label, sample_ratio in probs.items():
+            cluster_id = self.label_to_id[label]
+            cluster_X = self.data.X[self.data.y == cluster_id]
+            cluster_y = self.data.y[self.data.y == cluster_id]
+            cluster_n = cluster_y.size
+
+            subsample_ids = np.random.choice(cluster_n, size=cluster_n*sample_ratio)
+            sub_X = np.vstack([sub_X, cluster_X[subsample_ids]])
+            sub_y = np.vstack([sub_y, cluster_y[subsample_ids]])
+
+
+        return np.random.shuffle(sub_X), np.random.shuffle(sub_y)
 
 class PCREvaluator:
+    """Data container and evaluator for ddPCR data
+    The main class container for pyDrop containing the majority of testing and
+    post-processing functionality for ddPCR data. Loads data from a pre-instantiated
+    PCRData object. 
+    Parameters
+    ----------
+    data: PCRData
+        PCRData object with or without true value labels. Note that some of the functionality
+        or PCREvaluator depends on true value labels for supervised clustering metrics and
+        scores, but post-processing, fitting, and predicting cluster scores is still possible
+        without true value labels. 
+    Usage
+    -----
+    >>> filepath = "data/3d_assay_0.csv" # filepath containing true value labels
+    >>> data = PCRData(filepath, sep=",", header=True)
+    >>> pcr = PCREvaluator(data)
+    >>> pcr.set_model(sklearn.cluster.KMeans(n_clusters=data.predicted_num_clusters))
+    >>> cluster_labels = pcr.fit_predict()
+    """
     def __init__(self, data: PCRData):
         self.data = data
-        clusters = self.data.predicted_num_clusters
-        self.default_models = [cluster.KMeans(n_clusters=clusters), 
-                               cluster.AgglomerativeClustering(n_clusters=clusters),
-                               cluster.DBSCAN(), cluster.OPTICS(), 
-                               cluster.Birch(n_clusters=clusters)]
+        self.model = None
     
+    def plot_supervised_metrics(self, models):
+        """
+        """
 
-    def report_supervised_metrics(self, models: list=[]):
         if not self.data.supervised:
             raise Exception
-        
-        if not models:
-            models = self.default_models
 
         results = []
 
         #Determing accuracy of each clustering model with
         
-        for model in models:
+        for model in models.values():
             predictions = model.fit_predict(self.data.X)
             # Creating an array of accuracy scores
             scores = [rand_score(self.data.y, predictions), homogeneity_score(self.data.y, predictions),
                     completeness_score(self.data.y, predictions), v_measure_score(self.data.y, predictions)]
             results.append(scores)
 
-        #Making results vector the correct shape
+        # Making results vector the correct shape
         results = np.transpose(np.array(results))
 
         #Creating Bar Graph
-        labels = ['KMeans', 'AggClus', 'DBSCAN', 'OPTICS', 'Birch']
+        labels = list(models.keys())
 
         x = np.arange(len(labels))  # the label locations
         width = 0.2  # the width of the bars
@@ -192,4 +262,66 @@ class PCREvaluator:
         
         return fig1
 
+    def predict_num_clusters(self, method="elbow", graph=False):
+        if method == "elbow":
+            return self._elbow_method(graph=graph)
+        elif method == "silhouette":
+            return 
+        else:
+            raise ValueError
+
+    def _elbow_method(self, graph=False):
+        # Extracting data and true clustering values from dataframe
+        features = self.data.X
+
+        # Run KMeans with different number of clusters
+        k_values = range(1, 4*self.data.num_features)
+        inertias = []
+
+        for k in k_values:
+            kmeans = cluster.KMeans(n_clusters=k)
+            kmeans.fit(features)
+            inertias.append(kmeans.inertia_)
+
+        # Calculate the slopes between adjacent points
+        slopes = np.diff(inertias) / np.diff(k_values)
+
+        # Find the index of the point with the largest change in slopes
+        largest_change_index = np.argmax(np.abs(np.diff(slopes))) + 1
+
+        # Calculate the largest change in slopes
+        largest_change = np.abs(slopes[largest_change_index] - slopes[largest_change_index - 1])
+
+        if graph:
+            fig, ax = plt.subplots()
+            ax.plot(k_values, inertias, 'bo-')
+            ax.set_xlabel('K-value')
+            ax.set_ylabel('Inertia')
+            ax.set_title('Elbow Method')
+
+            # Add text to the plot
+            textstr = 'K-value where the largest change in slope occurs: k={}'.format(k_values[largest_change_index])
+            props = dict(boxstyle='round', facecolor='white', alpha=0.5)
+            ax.text(0.5, 0.95, textstr, transform=ax.transAxes, fontsize=10,
+                    verticalalignment='top', bbox=props)
+
+            plt.show()
+
+        return k_values[largest_change_index]
     
+    def set_model(self, model):
+        self.model = model
+
+    def fit(self):
+        self.model.fit(self.data.X)
+    
+    def predict(self, X_data=None):
+        if X_data == None:
+            X_data = self.data.X
+        return self.model.predict(X_data)
+    
+    def fit_predict(self):
+        return self.model.fit_predict(self.data.X)
+    
+    def get_interstitial_fraction(self):
+        return 0.90
