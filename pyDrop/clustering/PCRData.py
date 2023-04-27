@@ -11,8 +11,13 @@ import re
 from sklearn import cluster
 from sklearn.metrics.cluster import rand_score, homogeneity_score, completeness_score, v_measure_score
 
-from pyDrop.exceptions import (ModelValueError, 
-                               AmbiguousCGFunction)
+from pyDrop.exceptions import (PCRDataReadingException,
+                               FeaturesImproperlySpecified,
+                               LabelsImproperlySpecified,
+                               TooManyDimensions,
+                               SupervisedDataRequired,
+                               NumClustersModelValueError,
+                               ImproperClusterModel)
 
 class PCRData:
     """Loads Data from file or pandas dataframe. Includes options 
@@ -38,15 +43,19 @@ class PCRData:
         if isinstance(data, pd.DataFrame):
             pass
         elif isinstance(data, str):
-            data = pd.read_csv(data, *args, **kwargs)
+            try:
+                data = pd.read_csv(data, *args, **kwargs)
+            except Exception as e:
+                raise PCRDataReadingException(e)
         else:
-            raise Exception
+            raise PCRDataReadingException(f"Data must be of the format str or pandas.DataFrame. Type {type(data)} was given.")
         
         self.verbose = verbose
         
         if X_columns: # explicitly given X columns
             if any([name not in data.columns for name in X_columns]): # if not all of X_columns appear 
-                raise Exception
+                ghost_names = [name for name in X_columns if name not in data.columns]
+                raise FeaturesImproperlySpecified(f"The given names do not appear in the data feature columns: {ghost_names}")
             else:
                 self.X_cols = X_columns
         else: # if no explicitly given X columns, try to infer based on a standard format ch*
@@ -58,14 +67,14 @@ class PCRData:
                 else:
                     skipped_cols.append(name)
             if skipped_cols and self.verbose:
-                raise UserWarning(skipped_cols)
+                raise UserWarning(f"The following columns were skipped when assigning features automatically {skipped_cols}")
             
             self.X_cols = X_columns
 
         self.supervised = True
         if y_column:
             if y_column not in data.columns:
-                raise Exception
+                raise LabelsImproperlySpecified(f"The given y column ({y_column}) does not appear in the data.")
             else:
                 self.y_col = y_column
         else: # if no explicitly given y column, try to infer based on the format column_*
@@ -74,9 +83,9 @@ class PCRData:
                 if regexp.search(name) and not self.y_col:
                     self.y_col = name
                 elif regexp.search(name) and self.y_col:
-                    raise Exception
+                    raise LabelsImproperlySpecified(f"2 y columns found: [{self.y_col}, {name}]. Please use the y_column argument to specify which column to use. ")
             if not self.y_col:
-                raise UserWarning("now in unsupervised mode")
+                raise UserWarning("No y column found. Now in supervised mode.")
                 self.supervised = False # assign false only if no default column found
 
         self.col_to_id = dict([(col_name, idx) for idx, col_name in enumerate(self.X_cols)])
@@ -147,7 +156,7 @@ class PCRData:
             ax.set_title('3D Clustering')
 
         else:
-            raise UserWarning(f"Plotting for data of {self.num_features} dimensions is not supported")
+            raise TooManyDimensions(f"Plotting for data of {self.num_features} dimensions is not supported")
 
         return fig
 
@@ -175,7 +184,7 @@ class PCRData:
         """
         
         if not self.supervised:
-            raise Exception
+            raise SupervisedDataRequired("Data is unsupervised. Must have true value labels to use subsample_clusters method.")
 
         sub_X = np.array([])
         sub_y = np.array([])
@@ -238,7 +247,7 @@ class PCREvaluator:
         """
 
         if not self.data.supervised:
-            raise Exception
+            raise SupervisedDataRequired("Data is unsupervised. Must have true value labels to use plot_supervised_metrics method.")
 
         results = []
         results_dict = {}
@@ -310,7 +319,7 @@ class PCREvaluator:
         elif method == "silhouette":
             return 
         else:
-            raise ValueError
+            raise NumClustersModelValueError("method must either by elbow or silhouette")
 
     def _elbow_method(self, graph=False):
         # Extracting data and true clustering values from dataframe
@@ -365,9 +374,9 @@ class PCREvaluator:
         None
         """
         if "fit" not in dir(model):
-            raise Exception
+            raise ImproperClusterModel("given model does not contain a fit method")
         elif "predict" not in dir(model):
-            raise Exception
+            raise ImproperClusterModel("given model does not contain a predict method")
         
         self.model = model
         self.model.fit(self.data.X)
