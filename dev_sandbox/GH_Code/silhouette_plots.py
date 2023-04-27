@@ -2,62 +2,58 @@ from sklearn.datasets import make_blobs
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_samples, silhouette_score
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
+from typing import Optional
 
-def silhouette(daf, mav, dims=None):
-    #daf - specifying the file path to the data frame
-    #ex daf = "../../data/X002_droplet_amplitudes.csv", must be in quotes
-    # mav - specifying the maximum number of clusters to test
-    # dimensions - used to determine the dimensions of the input data frame
+def silhouette(daf: str, mav: int, dims: Optional[int] = None) -> None:
+    """
+    Plot the silhouette scores for KMeans clustering on the specified data frame.
 
-    #import the data set
-    df = pd.read_csv(daf)
+    Parameters:
+    - daf (str): The file path to the data frame.
+    - mav (int): The maximum number of clusters to test.
+    - dims (int): The number of dimensions in the input data frame. Defaults to None.
 
-    # Extracting data and true clustering values from dataframe
+    Returns:
+    - None
+    """
+    # Check input values
+    if not isinstance(mav, int) or mav <= 0:
+        raise ValueError("mav must be a positive integer")
+    if dims is not None and (not isinstance(dims, int) or dims <= 0):
+        raise ValueError("dims must be a positive integer or None")
 
-    features = df.iloc[:, dims - 1].values
+    # Import the data set
+    try:
+        df = pd.read_csv(daf)
+    except FileNotFoundError:
+        raise ValueError("File not found")
 
-    #definition a matrix of cluster values
-    k_values = range(1, mav)
+    # Extract data and true clustering values from dataframe
+    if dims is None:
+        features = df.values
+    else:
+        features = df.iloc[:, :dims].values
 
-for n_clusters in range_n_clusters:
+    # Set range of clusters to try
+    k_values = range(2, mav + 1)
 
-    #initialize K_Means
-    clusterer = KMeans(n_clusters=n_clusters, random_state=10)
-    cluster_labels = clusterer.fit_predict(features)
+    # Initialize list to store silhouette scores
+    silhouette_scores = []
 
-    #Compute the silhouette scores for each sample
-    silhouette_avg = silhouette_score(daf , cluster_labels)
-    print("For n_clusters =", n_clusters, "The average silhouette_score is :", silhouette_avg)
+    # Loop through cluster values and calculate silhouette score for each
+    for k in k_values:
+        kmeans = KMeans(n_clusters=k, random_state=42)
+        kmeans.fit(features)
+        score = silhouette_score(features, kmeans.labels_)
+        silhouette_scores.append(score)
+
+    # Plot the silhouette scores
+    plt.plot(k_values, silhouette_scores, 'bo-', color='b', linewidth=2, markersize=8)
+    plt.xlabel('Number of clusters')
+    plt.ylabel('Silhouette score')
+    plt.title(f'Silhouette plot for KMeans clustering on {daf}')
+    plt.show()
 
 
-    
-# from sklearn.cluster import KMeans
-# from sklearn.metrics import silhouette_score
-# from sklearn.datasets import make_blobs
-# import matplotlib.pyplot as plt
-#
-# # Generate sample data
-# X, y = make_blobs(n_samples=1000, centers=8, n_features=2, random_state=42)
-#
-# # Set range of clusters to try
-# k_values = range(2, 11)
-#
-# # Initialize list to store silhouette scores
-# silhouette_scores = []
-#
-# # Loop through cluster values and calculate silhouette score for each
-# for k in k_values:
-#     kmeans = KMeans(n_clusters=k, random_state=42)
-#     kmeans.fit(X)
-#     score = silhouette_score(X, kmeans.labels_)
-#     silhouette_scores.append(score)
-#
-# # Plot the silhouette scores
-# plt.plot(k_values, silhouette_scores, 'bo-', color='b', linewidth=2, markersize=8)
-# plt.xlabel('Number of clusters')
-# plt.ylabel('Silhouette score')
-# plt.title('Silhouette plot for KMeans clustering')
-# plt.show()
-
+silhouette("../../data/X002_droplet_amplitudes.csv", 12, 2)
