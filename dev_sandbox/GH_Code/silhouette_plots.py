@@ -1,6 +1,5 @@
-from sklearn.datasets import make_blobs
 from sklearn.cluster import KMeans
-from sklearn.metrics import silhouette_samples, silhouette_score
+from sklearn.metrics import silhouette_score
 import matplotlib.pyplot as plt
 import pandas as pd
 from typing import Optional
@@ -47,7 +46,11 @@ def silhouette(daf: str, mav: int, dims: Optional[int] = None) -> None:
         kmeans.fit(features)
         score = silhouette_score(features, kmeans.labels_)
         silhouette_scores.append(score)
+        if score == max(silhouette_scores):
+                maxk = []
+                maxk = k
 
+    print ('The optimal number of clusters is:', maxk)
     # Plot the silhouette scores
     plt.plot(k_values, silhouette_scores, 'bo-', color='b', linewidth=2, markersize=8)
     plt.xlabel('Number of clusters')
