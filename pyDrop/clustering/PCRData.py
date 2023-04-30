@@ -9,7 +9,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import re
 from sklearn import cluster
-from sklearn.metrics.cluster import rand_score, homogeneity_score, completeness_score, v_measure_score
+from sklearn.metrics.cluster import rand_score, homogeneity_score, completeness_score, v_measure_score, silhouette_score
+
+import os
+import math
+from scipy import stats
+from scipy.stats import poisson, norm, chi2, cosine, exponnorm, hypsecant, logistic, genlogistic, dweibull, cauchy, exponweib
 
 from pyDrop.exceptions import (PCRDataReadingException,
                                FeaturesImproperlySpecified,
@@ -34,12 +39,12 @@ class PCRData:
     Usage
     -----
     >>> filepath = "data/3d_assay_0.csv"
-    >>> data = PCRData(filepath, sep=",", header=True)
+    >>> data = PCRData(filepath, sep=",", header=0)
     >>> data.plot()
     PCRData also contains functionality to subsample data if true labels are given for testing purposes:
     >>> data.subsample_clusters({1: 1.0, 2: 0, 3: 0.5})
     """
-    def __init__(self, data, X_columns: list(str)=[], y_column: str="", verbose: bool=True, *args, **kwargs):
+    def __init__(self, data, X_columns: list=[], y_column: str="", verbose: bool=False, *args, **kwargs):
         if isinstance(data, pd.DataFrame):
             pass
         elif isinstance(data, str):
@@ -62,7 +67,8 @@ class PCRData:
             regexp = re.compile(r'ch*', re.I)
             skipped_cols = []
             for name in data.columns:
-                if regexp.search(name):
+                match = regexp.search(name)
+                if match and match.span()==(0,2):
                     X_columns.append(name)
                 else:
                     skipped_cols.append(name)
@@ -78,23 +84,25 @@ class PCRData:
             else:
                 self.y_col = y_column
         else: # if no explicitly given y column, try to infer based on the format column_*
-            regexp = re.compile(r'column_*', re.I)
+            regexp = re.compile(r'cluster*', re.I)
+            self.y_col = ""
             for name in data.columns:
                 if regexp.search(name) and not self.y_col:
                     self.y_col = name
                 elif regexp.search(name) and self.y_col:
                     raise LabelsImproperlySpecified(f"2 y columns found: [{self.y_col}, {name}]. Please use the y_column argument to specify which column to use. ")
             if not self.y_col:
-                raise UserWarning("No y column found. Now in supervised mode.")
+                raise UserWarning("No y column found. Now in unsupervised mode.")
                 self.supervised = False # assign false only if no default column found
 
         self.col_to_id = dict([(col_name, idx) for idx, col_name in enumerate(self.X_cols)])
         
         self.X = data[self.X_cols].to_numpy()
         if self.supervised:
-            self.labels = np.unique(self.y)
+            y_data = data[self.y_col].to_numpy()
+            self.labels = np.unique(y_data)
             self.label_to_id = dict([(label, idx) for idx, label in enumerate(self.labels)])
-            self.y = data[self.y_col].applymap(lambda x: self.label_to_id[x]).to_numpy()
+            self.y = data[[self.y_col]].applymap(lambda x: self.label_to_id[x]).to_numpy().reshape(-1)
         else:
             self.y = np.array([])
         
@@ -122,13 +130,14 @@ class PCRData:
                 '#FF6347', '#CD5C5C', '#A0522D', '#696969']
         
         # Create 1,2 or 3 dimensional scatter plot
-        fig, ax = plt.subplots()  # Create a new figure and axis for the 1D plot
+        fig = plt.figure()  # Create a new figure and axis for the 1D plot
         if self.supervised:
             sample_color = [colors[cluster] for cluster in self.y]
         else:
             sample_color = "k"
 
         if self.num_features == 1:
+            ax = fig.add_subplot(111)
             ax.scatter(range(self.num_samples), self.X, c=sample_color)  # applies unique color to cluster
 
             # set axis labels and title
@@ -137,33 +146,120 @@ class PCRData:
             ax.set_title('1D Clustering')
 
         elif self.num_features == 2:
+            ax = fig.add_subplot(111)
             ax.scatter(self.X[:,0], self.X[:,1] , c=sample_color)  # applies unique color to cluster
 
             # set axis labels and title
-            ax.set_xlabel('Droplet')
-            ax.set_ylabel(self.X_cols[0])
+            ax.set_xlabel(self.X_cols[0])
             ax.set_ylabel(self.X_cols[1])
             ax.set_title('2D Clustering')
 
         elif self.num_features == 3:
+            ax = fig.add_subplot(111, projection='3d')
             ax.scatter(self.X[:,0], self.X[:,1], self.X[:,2], c=sample_color)  # applies unique color to cluster
 
             # set axis labels and title
-            ax.set_xlabel('Droplet')
-            ax.set_ylabel(self.X_cols[0])
+            ax.set_xlabel(self.X_cols[0])
             ax.set_ylabel(self.X_cols[1])
-            ax.set_ylabel(self.X_cols[2])
+            ax.set_zlabel(self.X_cols[2])
             ax.set_title('3D Clustering')
 
         else:
             raise TooManyDimensions(f"Plotting for data of {self.num_features} dimensions is not supported")
 
-        return fig
+        plt.show()
 
-    # def prevalidator(self):
-    #     return True
+    def predict_num_clusters(self, method="elbow", display=False):
+        """Uses statistical approaches to predict the number of clusters in the data
+        Can either use the elbow method or sillohette plot method to infer the
+        number of clusters using simple KMeans. Ideally, the number of clusters 
+        returned should correspond roughly to the anticipated number of clusters for
+        ddPCR data which is 2 times the number of features (2 assays per axis)
+        Parameters
+        ----------
+        method: str
+            Either "elbow" or "silhouette" which specifies the method to use to predict the
+            number of clusters.
+        display: bool
+            If True, display a visual summary of the appropriate method. Gives an elbow plot
+            if method="elbow" and a silhouette plot if method="silhouette"
+        Returns
+        -------
+        Number of Cluster: int
+            The anticipated number of clusters from elbow or silhouette method using 
+            sklearn's KMeans algorithm for clustering and accuracy calculations. 
+        """
+        if method == "elbow":
+            return self._elbow_method(graph=display)
+        elif method == "silhouette":
+            return self._silhouette_method(graph=display)
+        else:
+            raise NumClustersModelValueError("method must either by elbow or silhouette")
 
-    def subsample_clusters(self, probs: dict(int, float)={}):
+    def _elbow_method(self, graph=False):
+        # Extracting data and true clustering values from dataframe
+        features = self.X
+
+        # Run KMeans with different number of clusters
+        k_values = range(1, 4*self.num_features)
+        inertias = []
+
+        for k in k_values:
+            kmeans = cluster.KMeans(n_clusters=k, n_init=10)
+            kmeans.fit(features)
+            inertias.append(kmeans.inertia_)
+
+        # Calculate the slopes between adjacent points
+        slopes = np.diff(inertias) / np.diff(k_values)
+
+        # Find the index of the point with the largest change in slopes
+        largest_change_index = np.argmax(np.abs(np.diff(slopes))) + 1
+
+        # Calculate the largest change in slopes
+        largest_change = np.abs(slopes[largest_change_index] - slopes[largest_change_index - 1])
+
+        if graph:
+            fig, ax = plt.subplots()
+            ax.plot(k_values, inertias, 'bo-')
+            ax.set_xlabel('K-value')
+            ax.set_ylabel('Inertia')
+            ax.set_title('Elbow Method')
+
+            # Add text to the plot
+            textstr = 'K-value where the largest change in slope occurs: k={}'.format(k_values[largest_change_index])
+            props = dict(boxstyle='round', facecolor='white', alpha=0.5)
+            ax.text(0.5, 0.95, textstr, transform=ax.transAxes, fontsize=10,
+                    verticalalignment='top', bbox=props)
+
+            plt.show()
+
+        return k_values[largest_change_index]
+    
+    def _silhouette_method(self, graph=False):
+        # Initialize list to store silhouette scores
+        silhouette_scores = []
+        k_values = range(2, 4*self.num_features)   
+        # Loop through cluster values and calculate silhouette score for each
+        for k in k_values:
+            kmeans = cluster.KMeans(n_clusters=k, n_init=10)
+            kmeans.fit(self.X)
+            score = silhouette_score(self.X, kmeans.labels_)
+            silhouette_scores.append(score)
+            if score == max(silhouette_scores): #stores the optimal number of clusters as the maxk value
+                    maxk = []
+                    maxk = k
+
+        print ('The optimal number of clusters is:', maxk)
+        # Plot the silhouette scores
+        plt.plot(k_values, silhouette_scores, 'bo-', linewidth=2, markersize=8)
+        plt.xlabel('Number of clusters')
+        plt.ylabel('Silhouette score')
+        plt.title(f'Silhouette plot for KMeans clustering')
+        plt.show()
+
+        return maxk
+
+    def subsample_clusters(self, probs: dict={}, inplace=True):
         """Subsamples the data based on an input set of probabilities for each feature
         Mainly used to test algorithms with decreasing number of sample points per cluster
         or to stress-test workflows. Also used to create train-test splits of the data.
@@ -191,16 +287,28 @@ class PCRData:
 
         for label, sample_ratio in probs.items():
             cluster_id = self.label_to_id[label]
-            cluster_X = self.data.X[self.data.y == cluster_id]
-            cluster_y = self.data.y[self.data.y == cluster_id]
+            cluster_X = self.X[self.y == cluster_id]
+            cluster_y = self.y[self.y == cluster_id]
             cluster_n = cluster_y.size
 
-            subsample_ids = np.random.choice(cluster_n, size=cluster_n*sample_ratio)
-            sub_X = np.vstack([sub_X, cluster_X[subsample_ids]])
-            sub_y = np.vstack([sub_y, cluster_y[subsample_ids]])
+            subsample_ids = np.random.choice(cluster_n, size=int(cluster_n*sample_ratio))
+            if sub_X.size == 0:
+                sub_X = cluster_X[subsample_ids]
+                sub_y = cluster_y[subsample_ids]
+            else:
+                sub_X = np.vstack([sub_X, cluster_X[subsample_ids]])
+                sub_y = np.concatenate([sub_y, cluster_y[subsample_ids]])
 
+        shuff_ids = np.arange(sub_y.size)
+        np.random.shuffle(shuff_ids)
+        sub_X = sub_X[shuff_ids]
+        sub_y = sub_y[shuff_ids]
+        if inplace:
+            self.X = sub_X
+            self.y = sub_y
+            self.num_samples = sub_X.shape[0]
 
-        return np.random.shuffle(sub_X), np.random.shuffle(sub_y)
+        return sub_X, sub_y
 
 class PCREvaluator:
     """Data container and evaluator for ddPCR data
@@ -294,72 +402,6 @@ class PCREvaluator:
         
         return results_dict
 
-    def predict_num_clusters(self, method="elbow", display=False):
-        """Uses statistical approaches to predict the number of clusters in the data
-        Can either use the elbow method or sillohette plot method to infer the
-        number of clusters using simple KMeans. Ideally, the number of clusters 
-        returned should correspond roughly to the anticipated number of clusters for
-        ddPCR data which is 2 times the number of features (2 assays per axis)
-        Parameters
-        ----------
-        method: str
-            Either "elbow" or "silhouette" which specifies the method to use to predict the
-            number of clusters.
-        display: bool
-            If True, display a visual summary of the appropriate method. Gives an elbow plot
-            if method="elbow" and a silhouette plot if method="silhouette"
-        Returns
-        -------
-        Number of Cluster: int
-            The anticipated number of clusters from elbow or silhouette method using 
-            sklearn's KMeans algorithm for clustering and accuracy calculations. 
-        """
-        if method == "elbow":
-            return self._elbow_method(graph=display)
-        elif method == "silhouette":
-            return 
-        else:
-            raise NumClustersModelValueError("method must either by elbow or silhouette")
-
-    def _elbow_method(self, graph=False):
-        # Extracting data and true clustering values from dataframe
-        features = self.data.X
-
-        # Run KMeans with different number of clusters
-        k_values = range(1, 4*self.data.num_features)
-        inertias = []
-
-        for k in k_values:
-            kmeans = cluster.KMeans(n_clusters=k)
-            kmeans.fit(features)
-            inertias.append(kmeans.inertia_)
-
-        # Calculate the slopes between adjacent points
-        slopes = np.diff(inertias) / np.diff(k_values)
-
-        # Find the index of the point with the largest change in slopes
-        largest_change_index = np.argmax(np.abs(np.diff(slopes))) + 1
-
-        # Calculate the largest change in slopes
-        largest_change = np.abs(slopes[largest_change_index] - slopes[largest_change_index - 1])
-
-        if graph:
-            fig, ax = plt.subplots()
-            ax.plot(k_values, inertias, 'bo-')
-            ax.set_xlabel('K-value')
-            ax.set_ylabel('Inertia')
-            ax.set_title('Elbow Method')
-
-            # Add text to the plot
-            textstr = 'K-value where the largest change in slope occurs: k={}'.format(k_values[largest_change_index])
-            props = dict(boxstyle='round', facecolor='white', alpha=0.5)
-            ax.text(0.5, 0.95, textstr, transform=ax.transAxes, fontsize=10,
-                    verticalalignment='top', bbox=props)
-
-            plt.show()
-
-        return k_values[largest_change_index]
-    
     def set_model(self, model):
         """Sets the model to use in clustering operations
         Given model must be an instantiated object with all variables already
@@ -423,3 +465,30 @@ class PCREvaluator:
             labels of -1 that identifies which points lie in the interstitial fraction or middle reign.
         """
         return
+
+    def _format_data(self, X, y):
+        cluster_ids = np.unique(y)
+        clusters = []
+        for cluster_id in clusters_ids:
+            sub_X = X[y==cluster_id, :]
+            clusters.append(sub_X.T.tolist())
+
+        clusters_other_format = []
+        for cluster in clusters:
+            clusters_other_format.append(np.transpose(cluster))
+        return clusters, clusters_other_format
+
+if __name__ == "__main__":
+    filepath = "data/3d_assay_6.csv"
+    data = PCRData(filepath, sep=",", header=0)
+    pcre = PCREvaluator(data)
+    clusters = data.predicted_num_clusters
+
+    # models = {"KMeans": cluster.KMeans(n_clusters=clusters), 
+    #           "DBSCAN": cluster.DBSCAN()}
+    
+    # metrics = pcre.plot_supervised_metrics(models, display=True)
+    # print(metrics)
+
+    pcre.set_model(cluster.KMeans(n_clusters=clusters))
+    print(pcre.predict())
