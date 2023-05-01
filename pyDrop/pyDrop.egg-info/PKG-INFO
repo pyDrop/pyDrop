@@ -1,0 +1,12 @@
+Metadata-Version: 2.1
+Name: pyDrop
+Version: 0.0.0
+Summary: p
+Author: pyDrop LLC
+Author-email: pydrop@colorado.edu
+Keywords: clustering,ddPCR,coarsegraining
+Classifier: Development Status :: 1 - Alpha
+Description-Content-Type: text/markdown
+
+pyDrop: a python library for processing ddPCR data using clustering and 
+coarse-graining methods. 
