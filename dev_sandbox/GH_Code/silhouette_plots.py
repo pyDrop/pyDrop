@@ -59,4 +59,4 @@ def silhouette(daf: str, mav: int, dims: Optional[int] = None) -> None:
     plt.show()
 
 
-silhouette("../../data/X002_droplet_amplitudes.csv", 12, 2)
+silhouette("../../data/3d_assay_6.csv", 12, 3)
