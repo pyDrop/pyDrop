@@ -6,10 +6,13 @@
 Welcome to pyDrop Documentation!
 ================================
 
+This website documents all functions and classes for the pyDrop clustering package.
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
+   summary
    code
 
 
