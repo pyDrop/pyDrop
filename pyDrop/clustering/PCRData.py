@@ -107,7 +107,7 @@ class PCRData:
             self.y = np.array([])
         
         self.num_samples, self.num_features = self.X.shape
-        self.predicted_num_clusters = self.num_features * 2 # 2 clusters for each channel
+        self.predicted_num_clusters = 2 ** self.num_features # 2 clusters for each channel
     
     def plot(self):
         """Plots data up to 3 dimensions
@@ -442,53 +442,3 @@ class PCREvaluator:
             X_data = self.data.X
         cluster_ids = self.model.predict(X_data)
         return cluster_ids
-    
-    def predict_interstitial(self, tol=0.6, use_true_labels: bool=False):
-        """Returns the Interstitial fraction of points given a trained clustering algorithm
-        and optionally the true value labels of the data. The interstitial fraction of points
-        is the fraction of points that are not likely to be assigned to a single cluster. 
-        Whether a point is or is not likely to be clustered is set by the tol factor.
-        Parameters
-        ----------
-        tol: float, default=0.6
-            Specifies the probability limit below which a point is not likely to be assigned to
-            a given cluster. All points below this probability are included in the interstitial 
-            fraction. 
-        use_true_labels: bool, default=False
-            Whether or not to use the true labels in calculating the interstitial fraction. Otherwise
-            the cluster assignments using the given clustering model set by PCREvaluator.set_model()
-            is used. If True, the data must be supervised and specifiy true cluster labels.
-        Returns
-        -------
-        assignments: numpy.ndarray
-            A vector of assigned clusters with indices from 0 to <num_clusters-1> including an additional
-            labels of -1 that identifies which points lie in the interstitial fraction or middle reign.
-        """
-        return
-
-    def _format_data(self, X, y):
-        cluster_ids = np.unique(y)
-        clusters = []
-        for cluster_id in clusters_ids:
-            sub_X = X[y==cluster_id, :]
-            clusters.append(sub_X.T.tolist())
-
-        clusters_other_format = []
-        for cluster in clusters:
-            clusters_other_format.append(np.transpose(cluster))
-        return clusters, clusters_other_format
-
-if __name__ == "__main__":
-    filepath = "data/3d_assay_6.csv"
-    data = PCRData(filepath, sep=",", header=0)
-    pcre = PCREvaluator(data)
-    clusters = data.predicted_num_clusters
-
-    # models = {"KMeans": cluster.KMeans(n_clusters=clusters), 
-    #           "DBSCAN": cluster.DBSCAN()}
-    
-    # metrics = pcre.plot_supervised_metrics(models, display=True)
-    # print(metrics)
-
-    pcre.set_model(cluster.KMeans(n_clusters=clusters))
-    print(pcre.predict())
