@@ -2,3 +2,4 @@
 **/.vscode/.idea
 /.idea/misc.xml
 /.idea/pyDrop.iml
+/sphinx/_build
