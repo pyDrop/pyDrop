@@ -1,1 +1,1 @@
-from cg_exceptions import ModelValueError, AmbiguousCGFunction
+from .cg_exceptions import ModelValueError, AmbiguousCGFunction
