@@ -1,2 +1,4 @@
 **/__pycache__
-**/.vscode
+**/.vscode/.idea
+/.idea/misc.xml
+/.idea/pyDrop.iml
