@@ -3,8 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to pyDrop Documentation!
-================================
+Welcome to pyDrop!
+==================
 
 This website documents all functions and classes for the pyDrop clustering package.
 
