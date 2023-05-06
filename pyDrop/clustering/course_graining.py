@@ -269,7 +269,7 @@ class Bins:
         return ids
 
 class CGCluster:
-    """A coarse-graining wrapper for any cluster model
+    """A coarse-graining wrapper for any cluster model.
     Data is first coarse-grained using the Bins class and bin functions
     are added to accomodate the number of columns in the input data. The
     data is then coarse-grained and the given model is run. Can return the
@@ -290,6 +290,7 @@ class CGCluster:
     >>> model.fit(data)
     >>> y_pred = model.predict(data, model="coarse")
     """
+
     def __init__(self, bins=Bins(), model=OPTICS()):
         self.bins = bins
         self.model = model
@@ -307,12 +308,13 @@ class CGCluster:
         :type binf: class
         :return: None
         """
+
         bin_functions = [binf]*n_features
         self.bins.add_axes(bin_functions)
 
     def coarse_grain(self, X):
-        """Coarse grains the data 
-        returns the centers of the bins that correspond to the input
+        """Coarse grains the data.
+        Returns the centers of the bins that correspond to the input
         data and the specified bin functions. If no bin functions are specified, the 
         default bin functions are applied uniformly to each axis.
 
@@ -323,6 +325,7 @@ class CGCluster:
             the number of samples given.
         :rtype: numpy.ndarray
         """
+
         n_samples, n_features = X.shape
         n_defined_bins = self.bins.get_num_axes()
         if n_defined_bins == 0:
@@ -449,8 +452,8 @@ class KMCalico(CGCluster):
         self.fine_model.fit(X)
 
     def predict(self, X, model="fine", return_centers=False):
-        """Predicts the labels of the given data
-        predictions can be made using the coarse-grained model, fine
+        """Predicts the labels of the given data.
+        Predictions can be made using the coarse-grained model, fine
         model, or the default model.
 
         :param X: input data of shape (#features, #samples). (default=np.ndarray)

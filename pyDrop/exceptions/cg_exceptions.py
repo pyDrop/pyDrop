@@ -5,6 +5,6 @@ class ModelValueError(Exception):
 
 class AmbiguousCGFunction(Exception):
     """Error raised when coarse graining cannot be done
-    either due to improperly specifed binning functions or
-    not enough bin functions to accomodate the data.
+    either due to improperly specified binning functions or
+    not enough bin functions to accommodate the data.
     """

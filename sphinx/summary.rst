@@ -26,8 +26,8 @@ Section 3 - Clustering
 Section 3.1 - Existing Algorithms
 ---------------------------------
 
-Section 3.2 - Coarse Graining
------------------------------
+Coarse Graining
+---------------
 CGCluster:
     coarse-grained clustering wrapper for any cluster method
     purpose: Increases the ability of unsupervised models to capture smaller clusters through
