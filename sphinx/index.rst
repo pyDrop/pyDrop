@@ -17,7 +17,7 @@ This website documents all functions and classes for the pyDrop clustering packa
 
 
 
-Indices and tables
+Indices and Tables
 ==================
 
 * :ref:`genindex`
