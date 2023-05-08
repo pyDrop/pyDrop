@@ -1,7 +1,7 @@
 Summary
 ========
 
-The following python package aims to meet this goal by the design and testing of clustering algorithms and statistical
+The following python package aims to design and test a coarse-grained clustering algorithm and perform statistical
 analysis which improve testing accuracy and reduce computational cost.
 Coarse graining is a method by which data sets are binned before clustering is performed. After binning, any existing
 algorithm can be used for clustering, although K-means is recommended.
