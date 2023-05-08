@@ -1,30 +1,10 @@
 Summary
 ========
 
-Summary of the project
-
-Section 1 - Data Exploration
-============================
-
-Something goes here
-
-Section 1.1 - Visualization
----------------------------
-This is an introduction
-
-Section 1.1.1 Something else
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Data Visualization
-
-Section 2 - Pre-Processing
-==========================
-
-Section 3 - Clustering
-======================
-
-Section 3.1 - Existing Algorithms
----------------------------------
+The following python package aims to meet this goal by the design and testing of clustering algorithms and statistical
+analysis which improve testing accuracy and reduce computational cost.
+Coarse graining is a method by which data sets are binned before clustering is performed. After binning, any existing
+algorithm can be used for clustering, although K-means is recommended.
 
 Coarse Graining
 ---------------
@@ -38,7 +18,4 @@ KMCalico:
     Purpose: Iteratively course-grains the data and the updates the starting location
     of the K-means clustering algorithm. This method is fast and still technically
     trains on the original data with new center starting locations.
-
-Section 4 - Statistical Analysis
-================================
 
