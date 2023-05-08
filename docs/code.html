@@ -1,0 +1,516 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>Code Documentation &#8212; pyDrop 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/haiku.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Summary" href="summary.html" /> 
+  </head><body>
+      <div class="header" role="banner"><h1 class="heading"><a href="index.html">
+          <span>pyDrop 0.0.1 documentation</span></a></h1>
+        <h2 class="heading"><span>Code Documentation</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="summary.html">Summary</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content" role="main">
+        
+        
+  <section id="module-pyDrop.exceptions.cg_exceptions">
+<span id="code-documentation"></span><h1>Code Documentation<a class="headerlink" href="#module-pyDrop.exceptions.cg_exceptions" title="Permalink to this heading">¶</a></h1>
+<dl class="py exception">
+<dt class="sig sig-object py" id="pyDrop.exceptions.cg_exceptions.AmbiguousCGFunction">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyDrop.exceptions.cg_exceptions.</span></span><span class="sig-name descname"><span class="pre">AmbiguousCGFunction</span></span><a class="headerlink" href="#pyDrop.exceptions.cg_exceptions.AmbiguousCGFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Error raised when coarse graining cannot be done
+either due to improperly specified binning functions or
+not enough bin functions to accommodate the data.</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="pyDrop.exceptions.cg_exceptions.ModelValueError">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyDrop.exceptions.cg_exceptions.</span></span><span class="sig-name descname"><span class="pre">ModelValueError</span></span><a class="headerlink" href="#pyDrop.exceptions.cg_exceptions.ModelValueError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Error raised when the incorrect or mistyped model
+is given to the predict method of CGCluster or KMCalico</p>
+</dd></dl>
+
+<span class="target" id="module-pyDrop.clustering.course_graining"></span><dl class="py class">
+<dt class="sig sig-object py" id="pyDrop.clustering.course_graining.ArrangeBins">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyDrop.clustering.course_graining.</span></span><span class="sig-name descname"><span class="pre">ArrangeBins</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyDrop.clustering.course_graining.ArrangeBins" title="Permalink to this definition">¶</a></dt>
+<dd><p>Coarse grains data from a bin created from a linear space of the data.
+CG is performed using bins linearly spaced from min to max with a step
+size of step. Functionally, ArrangeBins is identical to <a class="reference internal" href="#pyDrop.clustering.course_graining.LinSpaceBins" title="pyDrop.clustering.course_graining.LinSpaceBins"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinSpaceBins</span></code></a> with
+the only difference being how the linear space if defined.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>min</strong> (<em>float</em>) – Inclusive minimum value for the start of the bins. Any values less than min are assigned the bin id of 0</p></li>
+<li><p><strong>max</strong> (<em>float</em>) – Exclusive maximum valuve for the end of the bins. Any values greater than max are assigned the bin id of n_bins (maximum bin id)</p></li>
+<li><p><strong>step</strong> (<em>float</em>) – Step between the start of adjacent bins</p></li>
+</ul>
+</dd>
+</dl>
+<section id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this heading">¶</a></h2>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">binf</span> <span class="o">=</span> <span class="n">ArrangeBins</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">3000</span><span class="p">,</span><span class="mi">100</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1253</span><span class="p">,</span><span class="mi">254</span><span class="p">,</span><span class="mi">3098</span><span class="p">,</span><span class="mi">490</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bins</span> <span class="o">=</span> <span class="n">binf</span><span class="o">.</span><span class="n">value_to_id</span><span class="p">(</span><span class="n">ids</span><span class="p">)</span> 
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bin_centers</span> <span class="o">=</span> <span class="n">binf</span><span class="o">.</span><span class="n">id_to_bin_center</span><span class="p">(</span><span class="n">bins</span><span class="p">)</span> <span class="c1"># coarse-grained data</span>
+</pre></div>
+</div>
+</section>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyDrop.clustering.course_graining.Bins">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyDrop.clustering.course_graining.</span></span><span class="sig-name descname"><span class="pre">Bins</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">default_binf=&lt;class</span> <span class="pre">'pyDrop.clustering.course_graining.ModuloBins'&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyDrop.clustering.course_graining.Bins" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates and Stores multiple coarse-graining functions for ease of use.
+Valid binning functions include LinSpaceBins, ArrangeBins, and ModuloBins and
+can be applied to various axes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>default_binf</strong> (<em>class</em>) – The default bin function to apply when no specified bin function is given (default=ModuloBins)</p>
+</dd>
+</dl>
+<section id="id1">
+<h2>Usage<a class="headerlink" href="#id1" title="Permalink to this heading">¶</a></h2>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">bins</span> <span class="o">=</span> <span class="n">Bins</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">binfs</span> <span class="o">=</span> <span class="p">[</span><span class="n">ModuloBins</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span> <span class="n">ModuloBins</span><span class="p">(</span><span class="mi">25</span><span class="p">)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bins</span><span class="o">.</span><span class="n">add_axes</span><span class="p">(</span><span class="n">binfs</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ids</span> <span class="o">=</span> <span class="n">bins</span><span class="o">.</span><span class="n">value_to_id</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">coarse_grained_data</span> <span class="o">=</span> <span class="n">bins</span><span class="o">.</span><span class="n">id_to_bin_center</span><span class="p">(</span><span class="n">ids</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="pyDrop.clustering.course_graining.Bins.add_axes">
+<span class="sig-name descname"><span class="pre">add_axes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">binfs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyDrop.clustering.course_graining.Bins.add_axes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds multiple bin functions in series in the order received.
+Acts identically to add_axis but for multiple inputs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>binfs</strong> (<em>list</em>) – A list of bin classes (ModuloBins | ArrangeBins | LinSpaceBins).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyDrop.clustering.course_graining.Bins.add_axis">
+<span class="sig-name descname"><span class="pre">add_axis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">binf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyDrop.clustering.course_graining.Bins.add_axis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a single bin function.
+A valid bin function can include ModuloBins, LinSpaceBins, ArrangeBins, 
+or any coarse-graining object with vectorized value_to_id, id_to_bin_start,
+and id_to_bin_center methods to manipulate the data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>binf</strong> (<em>class</em>) – binf function to apply to axis len(self.binf_functions).
+Options: ModuloBins | ArrangeBins | LinSpaceBins (default=None)</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyDrop.clustering.course_graining.Bins.get_binf">
+<span class="sig-name descname"><span class="pre">get_binf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">axis</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyDrop.clustering.course_graining.Bins.get_binf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the bin function acting along axis &lt;axis&gt;.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>axis</strong> (<em>int</em>) – The integer axis ID to query a bin</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The bin function that acts along axis &lt;axis&gt;</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>class</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyDrop.clustering.course_graining.Bins.get_num_axes">
+<span class="sig-name descname"><span class="pre">get_num_axes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyDrop.clustering.course_graining.Bins.get_num_axes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the number of axes, which is the number of currently specified
+functions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>current number of bin functions</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyDrop.clustering.course_graining.Bins.id_to_bin_center">
+<span class="sig-name descname"><span class="pre">id_to_bin_center</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ids</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyDrop.clustering.course_graining.Bins.id_to_bin_center" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts a sequence of bin ids to bin center values.
+Returns an array of the same size as the input with bin center values
+that correspond to the ids given and the stored bin functions acting along
+each axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ids</strong> (<em>array</em><em> (</em><em>np.ndarray</em><em>)</em>) – ds must be a numpy array where the length of axis 1 is the same
+as the number of bin function/axes currently stored.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Array of bin center values where column i corresponds to the
+center values of bins for ids[:,i] passed to the ith bin function</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>array (np.ndarray)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyDrop.clustering.course_graining.Bins.id_to_bin_start">
+<span class="sig-name descname"><span class="pre">id_to_bin_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ids</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyDrop.clustering.course_graining.Bins.id_to_bin_start" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts a sequence of bin ids to bin start values.
+Returns an array of the same size as the input with bin start values
+that correspond to the ids given and the stored bin functions acting along
+each axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ids</strong> (<em>array</em><em> (</em><em>np.ndarray</em><em>)</em>) – ids must be a numpy array where the length of axis 1 is the same
+as the number of bin function/axes currently stored.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Array of bin start values where column i corresponds to the
+start values of bins for ids[:,i] passed to the ith bin function
+in self.bin_functions</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>array (np.ndarray)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyDrop.clustering.course_graining.Bins.value_to_id">
+<span class="sig-name descname"><span class="pre">value_to_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">values</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyDrop.clustering.course_graining.Bins.value_to_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts a sequence of values to bin ids.
+Returns an array of the same size as the input with bin ids
+that correspond to the values given and the stored bin functions acting along
+each axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>values</strong> (<em>array</em>) – A numpy array where the length of axis 1 is the same
+as the number of bin function/axes currently stored.1</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Array of bin ids where column i corresponds to the bin ids
+for values[:,i] passed to the ith bin function in self.bin_functions</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>array</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyDrop.clustering.course_graining.CGCluster">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyDrop.clustering.course_graining.</span></span><span class="sig-name descname"><span class="pre">CGCluster</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bins=&lt;pyDrop.clustering.course_graining.Bins</span> <span class="pre">object&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model=OPTICS()</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyDrop.clustering.course_graining.CGCluster" title="Permalink to this definition">¶</a></dt>
+<dd><p>A coarse-graining wrapper for any cluster model.
+Data is first coarse-grained using the Bins class and bin functions
+are added to accomodate the number of columns in the input data. The
+data is then coarse-grained and the given model is run. Can return the
+model and scores for the model with and without coarse-graining.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bins</strong> (<em>class</em>) – Any class that stores a number of bin functions.
+default=pydrop.clustering.Bins()</p></li>
+<li><p><strong>model</strong> (<em>class</em>) – Any clustering model with fit, predict, and fitpredict
+methods. See sklearn.cluster documentation for a number of models. (default=sklearn.cluster.OPTICS)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>CGCluster</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>class</p>
+</dd>
+</dl>
+<section id="id2">
+<h2>Usage<a class="headerlink" href="#id2" title="Permalink to this heading">¶</a></h2>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">CGCluster</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_pred</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="s2">&quot;coarse&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="pyDrop.clustering.course_graining.CGCluster.coarse_grain">
+<span class="sig-name descname"><span class="pre">coarse_grain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyDrop.clustering.course_graining.CGCluster.coarse_grain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Coarse grains the data.
+Returns the centers of the bins that correspond to the input
+data and the specified bin functions. If no bin functions are specified, the 
+default bin functions are applied uniformly to each axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>X</strong> (<em>numpy.ndarray</em>) – Input data of shape (#features, #samples)</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>coarse-grained data of size (#features, &lt; #samples). The
+number of samples returned is always less than or equal to
+the number of samples given.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyDrop.clustering.course_graining.CGCluster.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyDrop.clustering.course_graining.CGCluster.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fits the data.
+First coarse-grains the data using the given bin functions and
+then fits the given clustering model on the coarse-grained data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>X</strong> (<em>numpy.ndarray</em>) – Input training data of shape (#features, #samples).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyDrop.clustering.course_graining.CGCluster.fit_uniform_coarse_grain">
+<span class="sig-name descname"><span class="pre">fit_uniform_coarse_grain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binf=&lt;pyDrop.clustering.course_graining.ModuloBins</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyDrop.clustering.course_graining.CGCluster.fit_uniform_coarse_grain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates bin functions that matches the number of features of the
+input data. All bin functions are the same and any previous bin functions
+are overriden.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_features</strong> (<em>int</em>) – Number of features and number of required bin functions.</p></li>
+<li><p><strong>binf</strong> (<em>class</em>) – A bin function to uniformly apply to all features.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyDrop.clustering.course_graining.CGCluster.predict">
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'coarse'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyDrop.clustering.course_graining.CGCluster.predict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Predicts the labels of the given data.
+Predictions can be made using the coarse-grained model or
+the default model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – Input data of shape (#features, #samples).</p></li>
+<li><p><strong>model</strong> (<em>str</em>) – Must be “coarse” or “default”. (default=”coarse”)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Array of labels predicted from the given data</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyDrop.clustering.course_graining.CGCluster.scores">
+<span class="sig-name descname"><span class="pre">scores</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'coarse'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyDrop.clustering.course_graining.CGCluster.scores" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a summary of the scores for the given model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – Input data of shape (#features, #samples)</p></li>
+<li><p><strong>y_true</strong> (<em>numpy.ndarray</em>) – True label values of the input data for supervised scores.</p></li>
+<li><p><strong>model</strong> (<em>str</em>) – Must be “coarse” or “default”. (default=”coarse”)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dict where keys=[“rand_score”, “homogeneity_score”, “completeness_score”, “n_misclassified”]
+dictionary of scores returned on the given data</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyDrop.clustering.course_graining.KMCalico">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyDrop.clustering.course_graining.</span></span><span class="sig-name descname"><span class="pre">KMCalico</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bins=&lt;pyDrop.clustering.course_graining.Bins</span> <span class="pre">object&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k_means_model=KMeans()</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyDrop.clustering.course_graining.KMCalico" title="Permalink to this definition">¶</a></dt>
+<dd><p>A coarse-graining wrapper for the KNN Calico method.
+Data is first coarse-grained using the Bins class and bin functions
+are added to accomodate the number of columns in the input data. The
+data is then coarse-grained and cluster centers are obtained using KMeans.
+Finally, those centers are used as input to a final KMeans model acting on
+the original (not coarse-grained) data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bins</strong> (<em>class</em>) – Can be any class that stores a number of bin functions</p></li>
+<li><p><strong>k_means_model</strong> (<em>class</em>) – Can be any clustering Kmeans model with fit, predict, and
+fitpredict methods. Cluster centers must be obtainable with
+a model.cluster_centers variable.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>KMCalico coarse grained predicter class</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>class</p>
+</dd>
+</dl>
+<section id="id3">
+<h2>Usage<a class="headerlink" href="#id3" title="Permalink to this heading">¶</a></h2>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">KMCalico</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_pred</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="s2">&quot;fine&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="pyDrop.clustering.course_graining.KMCalico.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyDrop.clustering.course_graining.KMCalico.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fits the data using the Calico algorithm.
+First coarse-grains the data using the given bin functions and
+then fits the given coarse clustering model on the coarse-grained data. Then
+uses the centers as input to the fine clustering model that trains using the 
+original data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>X</strong> (<em>numpy.ndarray</em>) – Input training data of shape (#features, #samples).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pyDrop.clustering.course_graining.KMCalico.predict">
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'fine'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_centers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyDrop.clustering.course_graining.KMCalico.predict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Predicts the labels of the given data.
+Predictions can be made using the coarse-grained model, fine
+model, or the default model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – input data of shape (#features, #samples). (default=np.ndarray)</p></li>
+<li><p><strong>model</strong> (<em>str</em>) – Must be “coarse”, “fine”, or “default”. (default=”coarse”)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray. An array of labels predicted from the given data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>array</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyDrop.clustering.course_graining.LinSpaceBins">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyDrop.clustering.course_graining.</span></span><span class="sig-name descname"><span class="pre">LinSpaceBins</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_bins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyDrop.clustering.course_graining.LinSpaceBins" title="Permalink to this definition">¶</a></dt>
+<dd><p>Coarse Grains data from bin created from a linear space of the data.
+CG is performed using bins linearly spaced from min to max with
+n_bins number of bins.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>min</strong> (<em>float</em>) – Inclusive minimum value for the start of the bins. Any values less
+than min are assiged the bin id of 0.</p></li>
+<li><p><strong>max</strong> (<em>float</em>) – Exclusive maximum value for the end of the bins. Any values greater
+than max are assigned the bin id of n_bins (maximum bin id).</p></li>
+<li><p><strong>n_bins</strong> (<em>int</em>) – Number of bins to subdivide the space into. (default=100)</p></li>
+</ul>
+</dd>
+</dl>
+<section id="id4">
+<h2>Usage<a class="headerlink" href="#id4" title="Permalink to this heading">¶</a></h2>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">binf</span> <span class="o">=</span> <span class="n">LinSpaceBins</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">3000</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1253</span><span class="p">,</span><span class="mi">254</span><span class="p">,</span><span class="mi">3098</span><span class="p">,</span><span class="mi">490</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bins</span> <span class="o">=</span> <span class="n">binf</span><span class="o">.</span><span class="n">value_to_id</span><span class="p">(</span><span class="n">ids</span><span class="p">)</span> 
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bin_centers</span> <span class="o">=</span> <span class="n">binf</span><span class="o">.</span><span class="n">id_to_bin_center</span><span class="p">(</span><span class="n">bins</span><span class="p">)</span> <span class="c1"># coarse-grained data</span>
+</pre></div>
+</div>
+</section>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyDrop.clustering.course_graining.ModuloBins">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyDrop.clustering.course_graining.</span></span><span class="sig-name descname"><span class="pre">ModuloBins</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mod</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rem</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyDrop.clustering.course_graining.ModuloBins" title="Permalink to this definition">¶</a></dt>
+<dd><p>Coarse Grains data using the same behavior as the modulo operator.
+CG is performed using a modulo(mod) and remainder(rem) to calculate 
+the id that satisfies: bin# = mod*id + rem</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mod</strong> (<em>int</em>) – The modulo that divides the input data. (default=100)</p></li>
+<li><p><strong>rem</strong> (<em>int</em>) – The remainder that adds to the input data. (default=0)</p></li>
+</ul>
+</dd>
+</dl>
+<section id="id5">
+<h2>Usage<a class="headerlink" href="#id5" title="Permalink to this heading">¶</a></h2>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">binf</span> <span class="o">=</span> <span class="n">ModuloBins</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1253</span><span class="p">,</span><span class="mi">254</span><span class="p">,</span><span class="mi">3098</span><span class="p">,</span><span class="mi">490</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bins</span> <span class="o">=</span> <span class="n">binf</span><span class="o">.</span><span class="n">value_to_id</span><span class="p">(</span><span class="n">ids</span><span class="p">)</span> 
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bin_centers</span> <span class="o">=</span> <span class="n">binf</span><span class="o">.</span><span class="n">id_to_bin_center</span><span class="p">(</span><span class="n">bins</span><span class="p">)</span> <span class="c1"># coarse-grained data</span>
+</pre></div>
+</div>
+</section>
+</dd></dl>
+
+</section>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="summary.html">Summary</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, TC.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 6.2.1.
+    </div>
+  </body>
+</html>
