@@ -39,7 +39,7 @@ class ModuloBins:
     >>> bins = binf.value_to_id(ids) 
     >>> bin_centers = binf.id_to_bin_center(bins) # coarse-grained data
     """
-    def __init__(self, mod: int=100, rem: int=0):
+    def __init__(self, mod: int=25, rem: int=0):
         self.mod = mod
         self.rem = rem
 
@@ -473,7 +473,7 @@ class KMCalico(CGCluster):
         self.model = k_means_model
 
         self.coarse_model = deepcopy(k_means_model)
-        self.coarse_model.set_params(n_init='auto')
+        self.coarse_model.set_params(n_init=10)
 
         self.fine_model = deepcopy(k_means_model)
         self.fine_model.set_params(n_init=1)
@@ -532,3 +532,6 @@ class KMCalico(CGCluster):
         else:
             return y_pred
 
+    def fit_predict(self, X, model="fine", return_centers=False):
+        self.fit(X)
+        return self.predict(X,model=model,return_centers=return_centers)
